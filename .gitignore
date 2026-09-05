@@ -6,3 +6,11 @@ dist/
 test-results/
 playwright-report/
 .DS_Store
+
+build/
+release/
+android/local.properties
+android/.gradle/
+android/**/build/
+*.jks
+*.keystore

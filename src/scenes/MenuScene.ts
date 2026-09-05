@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { LEVELS } from "../levels/levels";
 import { WorldRenderer } from "./WorldRenderer";
 import { heroFrame } from "../utils/ArcadeArt";
+import { save } from "../systems/SaveManager";
 export class MenuScene extends Phaser.Scene {
   private world!: WorldRenderer;
   private runner!: Phaser.GameObjects.Sprite;
@@ -27,6 +28,7 @@ export class MenuScene extends Phaser.Scene {
     this.game.events.emit("art-ready", this.textures);
   }
   update(time: number) {
+    if (save.data.settings.reducedMotion) { this.world.update(0, 0); this.runner.setTexture("hero-idle"); this.runner.y = 301; return; }
     this.world.update(time, time * 0.036);
     this.runner.setTexture(heroFrame("run", time));
     this.runner.y = 301 - Math.abs(Math.sin(time / 160)) * 1.1;

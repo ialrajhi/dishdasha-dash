@@ -24,7 +24,7 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
   private originalX: number;
   private artScale = 1;
   constructor(scene: Phaser.Scene, spec: HazardSpec) {
-    super(scene, spec.x, GROUND, spec.kind);
+    super(scene, spec.x, GROUND, propTexture(spec.kind));
     this.spec = spec;
     this.originalX = spec.x;
     scene.add.existing(this);
@@ -35,6 +35,7 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       this.setTexture(key);
       this.artScale = (propHeight[spec.kind] ?? 36) / this.height;
       this.setScale(this.artScale);
+      if (spec.kind === "ball") this.setOrigin(0.5).setY(GROUND - this.displayHeight / 2);
     }
   }
   tick(now: number, playerX: number, level: number) {
@@ -54,24 +55,24 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       this.x = this.originalX - ((now - this.motionStart) / 1000) * speed;
       if (["dallah", "kid", "waiter", "goat"].includes(this.spec.kind))
         this.y = GROUND - Math.abs(Math.sin(now / 85)) * 2;
-      if (["dallah", "cat", "goat", "pigeon"].includes(this.spec.kind)) {
-        this.setAngle(Math.sin(now / 100) * 4);
-        this.setScale(
-          this.artScale * (1 + Math.sin(now / 100) * 0.025),
-          this.artScale * (1 - Math.sin(now / 100) * 0.025),
-        );
-      }
-      if (this.spec.kind === "ball") this.angle -= 1.5;
     }
+    if (["dallah", "cat", "goat", "pigeon", "kid", "waiter"].includes(this.spec.kind)) {
+      this.setAngle(Math.sin(now / 125 + this.originalX) * 3);
+      this.setScale(this.artScale * (1 + Math.sin(now / 125) * 0.025),
+        this.artScale * (1 - Math.sin(now / 125) * 0.025));
+    }
+    if (this.spec.kind === "ball") this.angle = now * 0.04;
     if (
       this.spec.kind === "bag" &&
       this.x - playerX < 430 &&
       this.x - playerX > 330
     )
       this.y = GROUND - Math.max(0, (this.x - playerX - 330) * 0.65);
+    else if (this.spec.kind === "bag" && this.x - playerX <= 330) this.y = GROUND;
   }
   hitbox() {
     const [w, h] = sizes[this.spec.kind] ?? [27, 25];
-    return new Phaser.Geom.Rectangle(this.x - w / 2, this.y - h, w, h);
+    const bottom = this.spec.kind === "ball" ? this.y + this.displayHeight / 2 : this.y;
+    return new Phaser.Geom.Rectangle(this.x - w / 2, bottom - h, w, h);
   }
 }

@@ -17,7 +17,7 @@ import {
 } from "../systems/ScoreManager";
 import { save } from "../systems/SaveManager";
 import { audio } from "../systems/AudioManager";
-import { t, bilingual } from "../systems/LocalizationManager";
+import { worldT } from "../systems/LocalizationManager";
 export interface Snapshot {
   level: number;
   score: number;
@@ -47,6 +47,8 @@ export class GameScene extends Phaser.Scene {
   phase: "running" | "dead" | "complete" = "running";
   checkpoint = 210;
   gameTime = 0;
+  private stepAccumulator = 0;
+  private jumpSources = new Set<string>();
   private world!: WorldRenderer;
   private hooks!: GameHooks;
   private keys = new Set<string>();
@@ -67,11 +69,14 @@ export class GameScene extends Phaser.Scene {
     this.phase = "running";
     this.checkpoint = 210;
     this.gameTime = 0;
+    this.stepAccumulator = 0;
+    this.jumpSources.clear();
     this.keys.clear();
     this.lastHud = 0;
     this.finalNotice = false;
   }
   create() {
+    this.physics.disableUpdate();
     this.world = new WorldRenderer(this, this.level, this.course);
     const ground = this.physics.add.staticGroup();
     let start = 0;
@@ -130,33 +135,39 @@ export class GameScene extends Phaser.Scene {
       e.preventDefault();
       if (!this.keys.has(e.code)) {
         this.keys.add(e.code);
-        this.pressJump();
+        this.pressJump(`key:${e.code}`);
       }
     }
     if (e.code === "Escape" && !e.repeat) this.requestPause();
   }
   private keyUp(e: KeyboardEvent) {
     this.keys.delete(e.code);
-    if (["Space", "ArrowUp", "KeyW"].includes(e.code) && !this.keys.size)
-      this.releaseJump();
+    if (["Space", "ArrowUp", "KeyW"].includes(e.code))
+      this.releaseJump(`key:${e.code}`);
   }
   private pointerDown(pointer: Phaser.Input.Pointer) {
-    if (pointer.x > this.cameras.main.width * 0.38) this.pressJump();
+    if (pointer.x > this.cameras.main.width * 0.38) this.pressJump(`canvas:${pointer.id}`);
   }
-  private pointerUp() {
-    this.releaseJump();
+  private pointerUp(pointer: Phaser.Input.Pointer) {
+    this.releaseJump(`canvas:${pointer.id}`);
   }
-  pressJump() {
-    if (this.phase === "running" && this.scene.isActive())
-      this.player.press(this.gameTime);
+  pressJump(source = "external") {
+    if (this.phase !== "running" || !this.scene.isActive() || this.jumpSources.has(source)) return;
+    const first = this.jumpSources.size === 0;
+    this.jumpSources.add(source);
+    if (first) this.player.press(this.gameTime);
   }
-  releaseJump() {
-    if (this.player) this.player.release();
+  releaseJump(source = "external") {
+    if (!this.jumpSources.delete(source)) return;
+    if (!this.jumpSources.size && this.player) this.player.release();
   }
   clearInput() {
     this.keys.clear();
-    this.releaseJump();
-    this.player.bufferedAt = -1000;
+    this.jumpSources.clear();
+    if (this.player) {
+      this.player.held = false;
+      this.player.bufferedAt = -1000;
+    }
   }
   requestPause() {
     if (this.scene.isActive() && this.phase !== "complete") {
@@ -183,6 +194,7 @@ export class GameScene extends Phaser.Scene {
     this.hooks.hud(this.snapshot());
   }
   private burst(x: number, y: number, color: number, count = 8) {
+    if (save.data.settings.reducedMotion) return;
     for (let i = 0; i < count; i++) {
       const p = this.add.image(x, y, "pixel").setTint(color).setDepth(25);
       this.tweens.add({
@@ -230,7 +242,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setVelocityX(-55);
     this.player.visual.setTint(0xff9b82);
     this.time.delayedCall(140, () => this.player.visual.clearTint());
-    this.cameras.main.shake(140, 0.004);
+    if (!save.data.settings.reducedMotion) this.cameras.main.shake(140, 0.004);
     this.burst(this.player.x, this.player.y - 20, 0xf1a080);
     audio.play("damage");
     this.publish();
@@ -261,6 +273,7 @@ export class GameScene extends Phaser.Scene {
     });
   }
   private respawn() {
+    this.clearInput();
     this.hearts = 3;
     this.phase = "running";
     this.populate();
@@ -283,9 +296,10 @@ export class GameScene extends Phaser.Scene {
   finish() {
     if (this.phase !== "running") return;
     this.phase = "complete";
-    this.player.setVelocity(0, 0);
-    this.player.bodyRef.allowGravity = false;
-    this.player.state = "victory";
+    this.player.setVelocityX(0);
+    this.player.bodyRef.allowGravity = true;
+    this.player.bodyRef.setGravityY(0);
+    this.player.state = this.player.bodyRef.blocked.down ? "victory" : "fall";
     this.clearInput();
     const result = this.score.finish(
       this.level.id,
@@ -304,7 +318,7 @@ export class GameScene extends Phaser.Scene {
     audio.play(this.level.id === 5 ? "victory" : "complete");
     this.hooks.notice(this.level.finish, 1700);
     this.publish();
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < (save.data.settings.reducedMotion ? 0 : 60); i++) {
       const p = this.add
         .image(
           this.player.x + Phaser.Math.Between(-160, 280),
@@ -325,16 +339,33 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(2100, () => this.hooks.complete(result));
   }
   update(_time: number, delta: number) {
-    this.gameTime += Math.min(delta, 50);
-    const now = this.gameTime;
-    this.world.update(now);
-    this.player.animate(now);
-    this.shadow
-      .setPosition(this.player.x, GROUND + 1)
+    // One fixed clock owns physics, hazards, pickups and jump eligibility on every display.
+    if (delta > 250 && this.phase === "running") { this.requestPause(); return; }
+    const step = 1000 / 60;
+    this.stepAccumulator += Math.min(delta, 250);
+    while (this.stepAccumulator + 0.00001 >= step) {
+      this.physics.world.update(this.gameTime, step);
+      this.physics.world.postUpdate();
+      this.tick(step);
+      this.stepAccumulator -= step;
+    }
+    this.world.update(this.gameTime);
+    this.player.animate(this.gameTime);
+    this.shadow.setPosition(this.player.x, GROUND + 1)
       .setScale(Math.max(0.35, 1 - (GROUND - this.player.y) / 180));
-    if (this.phase !== "running") return;
+  }
+  private tick(delta: number) {
+    this.gameTime += delta;
+    const now = this.gameTime;
+    if (this.phase !== "running") {
+      if (this.phase === "complete") {
+        const grounded = this.player.bodyRef.blocked.down && this.player.bodyRef.velocity.y >= 0;
+        this.player.state = grounded ? "victory" : this.player.bodyRef.velocity.y < 0 ? "jump" : "fall";
+      }
+      return;
+    }
     const body = this.player.bodyRef;
-    const grounded = body.blocked.down || body.touching.down;
+    const grounded = (body.blocked.down || body.touching.down) && body.velocity.y >= 0;
     if (grounded) {
       this.player.lastGrounded = now;
       if (!this.player.wasGrounded) {
@@ -383,7 +414,7 @@ export class GameScene extends Phaser.Scene {
     }
     if (this.checkpoint === 210 && this.player.x >= this.course.checkpoint) {
       this.checkpoint = this.course.checkpoint;
-      this.hooks.notice(t("checkpoint"), 2000);
+      this.hooks.notice(worldT("checkpoint"), 2000);
       audio.play("select");
     }
     const playerBox = new Phaser.Geom.Rectangle(
@@ -429,7 +460,7 @@ export class GameScene extends Phaser.Scene {
         if (c.spec.golden) {
           save.golden(this.level.id);
           this.hooks.notice(
-            bilingual("لقيت الدلة الذهبية!", "Golden Dallah found!"),
+            "لقيت الدلة الذهبية!",
             1900,
           );
         }

@@ -1,0 +1,11 @@
+import { packager } from '@electron/packager';
+import { mkdir, cp, writeFile, rm } from 'node:fs/promises';
+const staging = 'build/desktop-staging';
+await rm(staging, { recursive: true, force: true });
+await mkdir(staging, { recursive: true });
+await cp('dist', `${staging}/dist`, { recursive: true });
+await cp('desktop', `${staging}/desktop`, { recursive: true });
+await writeFile(`${staging}/package.json`, JSON.stringify({ name: 'dishdasha-dash', productName: 'Dishdasha Dash', version: '1.1.0', main: 'desktop/main.cjs' }));
+const platform = process.argv[2] || process.platform;
+const arch = process.argv[3] || process.arch;
+console.log(await packager({ dir: staging, out: 'release/desktop', name: 'Dishdasha Dash', executableName: 'DishdashaDash', platform, arch, electronVersion: '44.2.0', asar: true, overwrite: true, prune: true, icon: platform === 'win32' ? 'art/icons/app-icon.ico' : platform === 'darwin' ? 'art/icons/app-icon.icns' : 'public/app-icon.png', appBundleId: 'com.falrajhi.dishdashadash', appCategoryType: 'public.app-category.arcade-games', appVersion: '1.1.0', win32metadata: { CompanyName: 'Dishdasha Dash', FileDescription: 'Dishdasha Dash — Kuwaiti arcade adventure' } }));

@@ -5,6 +5,7 @@ export interface Settings {
   sfx: boolean;
   volume: number;
   language: Language;
+  reducedMotion: boolean;
 }
 export interface LevelRecord {
   score: number;
@@ -12,18 +13,20 @@ export interface LevelRecord {
   golden: boolean;
 }
 export interface SaveData {
-  version: 1;
+  version: 2;
+  revision: number;
   unlocked: number;
   best: number;
   levels: Record<number, LevelRecord>;
   settings: Settings;
 }
 const defaults = (): SaveData => ({
-  version: 1,
+  version: 2,
+  revision: 0,
   unlocked: 1,
   best: 0,
   levels: {},
-  settings: { music: true, sfx: true, volume: 55, language: "ar" },
+  settings: { music: true, sfx: true, volume: 55, language: "en", reducedMotion: typeof matchMedia !== "undefined" && matchMedia('(prefers-reduced-motion: reduce)').matches },
 });
 const safeNumber = (value: unknown, fallback = 0) =>
   typeof value === "number" && Number.isFinite(value) && value >= 0
@@ -32,13 +35,24 @@ const safeNumber = (value: unknown, fallback = 0) =>
 export class SaveManager {
   data: SaveData = defaults();
   storageAvailable = true;
+  private writer?: (value: string) => Promise<void>;
+  private pending: Promise<void> = Promise.resolve();
   constructor() {
     this.load();
   }
   load() {
     try {
-      const raw = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
-      if (!raw || raw.version !== 1) return;
+      this.hydrate(localStorage.getItem(SAVE_KEY));
+    } catch {
+      this.storageAvailable = false;
+    }
+  }
+  hydrate(serialized: string | null): boolean {
+    try {
+      const raw = JSON.parse(serialized || "null");
+      if (!raw || ![1, 2].includes(raw.version)) return false;
+      this.data = defaults();
+      this.data.revision = safeNumber(raw.revision);
       this.data.unlocked = Math.min(
         5,
         Math.max(1, safeNumber(raw.unlocked, 1)),
@@ -58,19 +72,34 @@ export class SaveManager {
         music: s.music !== false,
         sfx: s.sfx !== false,
         volume: Math.min(100, safeNumber(s.volume, 55)),
-        language: s.language === "en" ? "en" : "ar",
+        language: raw.version === 2 && s.language === "ar" ? "ar" : "en",
+        reducedMotion: typeof s.reducedMotion === "boolean" ? s.reducedMotion : this.data.settings.reducedMotion,
       };
+      return true;
     } catch {
-      this.data = defaults();
+      return false;
     }
   }
+  setWriter(writer: (value: string) => Promise<void>) { this.writer = writer; }
+  flush() { return this.pending; }
+  private status(available: boolean) {
+    this.storageAvailable = available;
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("save-status"));
+  }
   persist() {
+    this.data.revision++;
+    const value = JSON.stringify(this.data);
+    let localAvailable = true;
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(this.data));
-      this.storageAvailable = true;
+      localStorage.setItem(SAVE_KEY, value);
     } catch {
-      this.storageAvailable = false;
+      localAvailable = false;
     }
+    if (!this.writer) { this.status(localAvailable); return; }
+    // Serialize writes so an older asynchronous save cannot replace newer progress.
+    this.pending = this.pending.then(() => this.writer!(value)).then(
+      () => this.status(true), () => this.status(false),
+    );
   }
   settings(changes: Partial<Settings>) {
     Object.assign(this.data.settings, changes);
@@ -104,7 +133,9 @@ export class SaveManager {
   }
   reset() {
     const settings = { ...this.data.settings };
+    const revision = this.data.revision;
     this.data = defaults();
+    this.data.revision = revision;
     this.data.settings = settings;
     this.persist();
   }

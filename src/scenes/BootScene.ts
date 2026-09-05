@@ -17,11 +17,12 @@ export class BootScene extends Phaser.Scene {
     for (const [key, url] of Object.entries(ASSET_OVERRIDES))
       this.load.image(key, url);
   }
-  create() {
+  async create() {
     if (this.failed) {
       this.game.events.emit("asset-error");
       return;
     }
+    await document.fonts.load('700 48px "Changa Variable"', 'بقالة بو خالد');
     generateCoreArt(this);
     prepareArcadeArt(this);
     this.game.events.emit("assets-ready");

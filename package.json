@@ -1,23 +1,45 @@
 {
   "name": "dishdasha-dash",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build",
+    "build": "node scripts/licenses.mjs && tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run"
+    "test": "vitest run",
+    "assets:prepare": "node scripts/prepare-art.mjs",
+    "android:sync": "npm run build && cap sync android",
+    "desktop:package": "npm run build && node scripts/package-desktop.mjs",
+    "desktop:dev": "electron desktop/main.cjs",
+    "test:browser": "playwright test",
+    "assets:native": "node scripts/native-icons.mjs && node scripts/desktop-icons.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.1",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/core": "8.5.1",
+    "@capacitor/preferences": "8.0.1",
     "@fontsource-variable/changa": "^5.3.0",
     "@fontsource-variable/space-grotesk": "^5.3.0",
     "phaser": "3.90.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.1",
+    "@electron/packager": "20.3.0",
     "@playwright/test": "^1.56.1",
+    "electron": "44.2.0",
+    "sharp": "0.35.4",
     "typescript": "~5.9.3",
     "vite": "^6.4.1",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "xcode": {
+      "uuid": "11.1.1"
+    }
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

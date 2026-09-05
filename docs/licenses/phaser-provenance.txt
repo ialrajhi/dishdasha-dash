@@ -1,0 +1,68 @@
+Matter.js — MIT
+Embedded: physics/matter-js/lib/*
+Notice: https://github.com/phaserjs/phaser/blob/v3.90.0/src/physics/matter-js/lib/license.js
+
+RBush (Phaser RTree fork) — MIT
+Embedded: structs/RTree.js
+Notice: https://raw.githubusercontent.com/mourner/rbush/v2.0.2/LICENSE
+
+Quickselect (Phaser adaptation) — ISC
+Embedded: utils/array/QuickSelect.js
+Notice: https://raw.githubusercontent.com/mourner/quickselect/v1.1.1/LICENSE
+
+poly-decomp — MIT
+Embedded: physics/matter-js/poly-decomp/index.js
+Notice: https://raw.githubusercontent.com/schteppe/poly-decomp.js/master/LICENSE
+
+line-circle-collision — MIT
+Embedded: geom/intersects/LineToCircle.js
+Notice: https://raw.githubusercontent.com/mattdesl/line-circle-collision/master/LICENSE.md
+
+gl-matrix — MIT
+Embedded: math/Matrix3.js, Matrix4.js, Vector2.js, Vector3.js, Vector4.js, Quaternion.js
+Notice: https://raw.githubusercontent.com/toji/gl-matrix/v2.3.2/LICENSE.md
+
+base64-arraybuffer — MIT
+Embedded: utils/base64/ArrayBufferToBase64.js, Base64ToArrayBuffer.js
+Notice: https://raw.githubusercontent.com/niklasvh/base64-arraybuffer/master/LICENSE
+
+Topological sort from javascript-algorithms — MIT
+Embedded: physics/matter-js/lib/core/Common.js
+Notice: https://raw.githubusercontent.com/mgechev/javascript-algorithms/master/LICENSE
+
+stable sort — MIT
+Embedded: utils/array/StableSort.js
+Notice: https://raw.githubusercontent.com/Two-Screen/stable/master/README.md
+
+Alea / Mash random number generator — MIT
+Embedded: math/random-data-generator/RandomDataGenerator.js
+Notice: https://raw.githubusercontent.com/nquinlan/better-random-numbers-for-javascript-mirror/master/README.md
+
+SVG path conversion by Gavin Kistner
+Embedded: physics/matter-js/lib/geometry/Svg.js
+Notice: https://phrogz.net/js/_ReuseLicense.txt
+
+jQuery utilities — MIT
+Embedded: utils/object/Extend.js, IsPlainObject.js
+Notice: https://raw.githubusercontent.com/jquery/jquery/1.12.4/LICENSE.txt
+
+PNPOLY point-in-polygon — Franklin permission notice
+Embedded: geom/polygon/Contains.js
+Notice: https://wrfranklin.org/Research/Short_Notes/pnpoly.html
+
+klasse — BSD-2-Clause
+Embedded: utils/Class.js
+Notice: https://raw.githubusercontent.com/mattdesl/klasse/master/package.json
+
+vecmath — BSD-2-Clause
+Embedded: math/Matrix3.js, Matrix4.js, Vector2.js, Vector3.js, Vector4.js, Quaternion.js
+Notice: https://raw.githubusercontent.com/mattdesl/vecmath/master/package.json
+
+three.js curve and interpolation adaptations — MIT
+Embedded: curves/Curve.js; math/interpolation/QuadraticBezierInterpolation.js
+Notice: https://raw.githubusercontent.com/mrdoob/three.js/r79/LICENSE
+
+AUDIT NOTES
+- klasse and vecmath upstream package metadata declares BSD-2-Clause; neither repository has a standalone full copyright/license file. The file preserves the declared license and author and includes standard SPDX BSD-2-Clause terms without inventing copyright years. vecmath README separately says MIT.
+- RVFC polyfill deliberately excluded from this permissive notice set. Current upstream license is GPL-3.0; see https://raw.githubusercontent.com/ThaUnknown/rvfc-polyfill/master/LICENSE. Phaser src/polyfills/index.js includes requestVideoFrame.js. Vite configuration excludes its exact module body from development and production engine copies and fails if the match is not unique. The production bundle was checked for zero _rvfcpolyfillmap references.
+- EventEmitter3, Earcut and Simplify omitted here because the parent already added them.

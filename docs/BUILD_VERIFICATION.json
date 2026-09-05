@@ -1,0 +1,59 @@
+{
+  "version": "1.1.0",
+  "checkedDate": "2026-09-05",
+  "unitTests": 18,
+  "browserTests": 14,
+  "browserTestsSkipped": 0,
+  "androidPhone": {
+    "testedAt": "2026-09-05T18:33:22.027Z",
+    "api": "36",
+    "abi": "arm64-v8a",
+    "pageSize": "4096",
+    "viewport": {
+      "width": 915,
+      "height": 412,
+      "dpr": 2.625
+    },
+    "wifi": "0",
+    "saveRestored": true,
+    "errors": []
+  },
+  "androidTablet": {
+    "testedAt": "2026-09-05T18:35:20.294Z",
+    "api": "36",
+    "abi": "arm64-v8a",
+    "pageSize": "4096",
+    "viewport": {
+      "width": 1707,
+      "height": 1067,
+      "dpr": 1.5
+    },
+    "wifi": "0",
+    "saveRestored": true,
+    "errors": []
+  },
+  "desktop": {
+    "electron": "44.2.0",
+    "macOSArm64": "Packaged executable smoke passed: offline, menus, licenses, fullscreen, jump/pause, sandbox, blocked external network, settings after relaunch",
+    "windowsX64": "Cross-packaged; not executed on Windows",
+    "steamInstallation": "Not tested"
+  },
+  "androidRelease": {
+    "versionCode": 1,
+    "targetSdk": 36,
+    "lintErrors": 0,
+    "lintWarnings": 12,
+    "debugApkSignatureVerified": true,
+    "zipAlignment16kbVerified": true,
+    "nativeLibraries": 0,
+    "releaseAabSigned": false
+  },
+  "engineVideoPolyfillExcluded": true,
+  "noticeAssetCheckedInApkAndAab": true,
+  "artifactSha256": [
+    "51701b19d7a287f9fe2289285870c3e5f51b32282017ac7b345339ebc698ae36  Dishdasha-Dash-1.1.0-Windows-x64.zip",
+    "e7dc08c2957d0e37a6847722f329c9a87db5828d236684dc36d0a8c9c4d013d6  Dishdasha-Dash-1.1.0-macOS-arm64.zip",
+    "c6f435e9291f44fefd47279ed5c4c110958cc2d72e37d498af7cfcae3c6a5869  android/Dishdasha-Dash-1.1.0-test.apk",
+    "00b23397a0593b69277f3743a6b2076ee36721409695d8c53ac1ff610b99a1d2  android/Dishdasha-Dash-1.1.0-unsigned.aab"
+  ]
+}

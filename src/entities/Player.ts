@@ -43,6 +43,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.bufferedAt = now;
   }
   release() {
+    if (!this.held) return;
     this.held = false;
     if (this.bodyRef.velocity.y < -140)
       this.setVelocityY(this.bodyRef.velocity.y * 0.48);
@@ -54,7 +55,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.lastFrame = key;
     }
     this.visual.setAlpha(
-      now < this.invulnerableUntil && Math.floor(now / 85) % 2 === 0 ? 0.35 : 1,
+      now < this.invulnerableUntil && Math.floor(now / 200) % 2 === 0 ? 0.35 : 1,
     );
   }
   private syncVisual() {

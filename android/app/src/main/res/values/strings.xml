@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dishdasha Dash</string>
+    <string name="title_activity_main">Dishdasha Dash</string>
+    <string name="package_name">com.falrajhi.dishdashadash</string>
+    <string name="custom_url_scheme">com.falrajhi.dishdashadash</string>
+</resources>

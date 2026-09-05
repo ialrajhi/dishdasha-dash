@@ -6,7 +6,7 @@ The arcade edition uses original illustrated Kuwait backgrounds and transparent 
 
 ## Install and run
 
-Use Node.js 20.19+ or Node.js 22.12+ and npm.
+Use Node.js 22.12+ and npm (Node 24 was used for this release pass).
 
 ```bash
 npm install
@@ -20,7 +20,31 @@ npm run build
 npm run preview
 ```
 
-The production build is in `dist/` and can be served by any static web host. npm is supported by `package-lock.json`; the workspace also retains the pnpm lockfile used during development.
+The production build is in `dist/` and can be served by any static web host. Vite creates an engine copy under ignored `build/engine/`, excluding the unused third-party video-frame polyfill with a unique-match assertion; this game does not use video. Use the committed `package-lock.json` with `npm ci` for reproducible installs. npm is the canonical package manager.
+
+## Release builds
+
+See [Release readiness](docs/RELEASE_READINESS.md) for verified checks and the remaining store gates. The Android project targets API 36 with Capacitor 8.5.1; Electron 44.2.0 provides desktop packaging. No store submission or production signing has been performed.
+
+```sh
+npm run build
+npm run android:sync
+# With JAVA_HOME (Java 21) and ANDROID_HOME configured:
+cd android
+./gradlew :app:assembleDebug :app:bundleRelease :app:lintRelease
+```
+
+The debug APK is for testing. The release AAB remains unsigned until the publisher configures their own upload key. Application ID `com.falrajhi.dishdashadash` and versionCode 1 are provisional until the publisher confirms the permanent identity.
+
+```sh
+# From the project root, after building:
+node scripts/package-desktop.mjs darwin arm64
+node scripts/package-desktop.mjs win32 x64
+```
+
+Outputs go into `release/desktop/`. A Windows package built on macOS still requires Windows/Steam installation testing. Installed packages bundle all assets and work offline. macOS signing/notarization, Windows signing, Steam depots, and store listings are publisher release steps. `npm run assets:native` regenerates launcher icons; macOS icon conversion requires macOS iconutil.
+
+After building the final web assets and Android APK, `node scripts/prepare-site-download.mjs` adds a private `test-builds/` download page to `dist/`. Run this only after native packaging so native apps never include their own downloadable APK. It verifies the APK contains the current web index before copying it.
 
 ## Controls and rules
 
@@ -31,6 +55,8 @@ The production build is in `dist/` and can be served by any static web host. npm
 | Jump higher  | Hold the jump key              | Hold the touch                        |
 | Pause/resume | Esc                            | Pause button / Resume                 |
 | Menus        | Tab or arrow keys, Enter/Space | Tap a button                          |
+
+Standard controllers use the bottom face button (A / ✕) for Jump/Select, the right face button (B / ○) for Back, Start for Pause, and the D-pad or left stick for menus. Physical controller and Steam Input certification remain release tests. Options includes Reduce effects, privacy/credits, licenses, and desktop Quit.
 
 One jump only. Jump buffering is 140 ms; coyote time is 110 ms. Releasing jump early cuts upward speed. Each stage begins with 3 hearts and 3 lives. Damage has 1.2 seconds of invulnerability. Death costs one life and respawns at the start or the invisible midpoint checkpoint, restoring hearts. Collected items and awarded obstacle points are retained to prevent farming by respawning.
 
@@ -52,11 +78,15 @@ The last stage speeds up by 8% near its finish. Deaths and pauses add to the tim
 
 Tea: **+100**. Avoided obstacle: **+25**. Golden dallah: **+5,000**. Finish: **+1,000**. Every tea in a stage: **+2,000**. Remaining hearts: **+250 each**. Remaining lives: **+500 each**.
 
-LocalStorage key: `dishdasha-dash:v1`. The game saves unlocked stages, overall best score, best completed score and tea count per stage, golden dallahs, and audio/language settings. Goldens save immediately on collection, even if the current attempt fails. Better records are never replaced with worse ones.
+Save format version 2 retains the LocalStorage key `dishdasha-dash:v1` for migration. Menus default to English; version-1 saves retain scores/unlocks and migrate to English. Version-2 saves preserve the chosen menu language. The HUD and world text always remain Arabic.
+
+Android also writes native Preferences. Snapshots carry monotonic revisions, writes are serialized, and startup chooses the newest valid local/native save, including intentional resets. Failed saves display a Retry message. Android backup is disabled.
+
+ The game saves unlocked stages, overall best score, best completed score and tea count per stage, golden dallahs, and audio/language settings. Goldens save immediately on collection, even if the current attempt fails. Better records are never replaced with worse ones.
 
 Campaign totals on the victory screen represent stages played in that run; the golden count represents all five persistent discoveries. Starting from Level Select begins a new run at that selected stage. Restarting a stage keeps the campaign’s other completed stage results. Death totals include retries.
 
-Saves belong to the current browser and site origin. A localhost save does not transfer to the hosted site or another device. If browser storage is unavailable, the game still runs with in-memory progress. Options → Reset progress has a Yes/No confirmation and preserves audio/language preferences.
+Saves belong to the current browser and site origin. A localhost save does not transfer to the hosted site or another device. If storage is unavailable, the game still runs with in-memory progress and a visible save warning. Browser, Android, and desktop saves do not sync across devices; Steam Cloud is not implemented. Options → Reset progress has a Yes/No confirmation and preserves audio/language preferences.
 
 ## Project structure
 
@@ -70,7 +100,7 @@ src/
     BootScene.ts              Asset loading, progress, recovery, and atlas preparation
     MenuScene.ts              Animated title background
     GameScene.ts              Gameplay, health, checkpoints, progression
-    WorldRenderer.ts          Parallax layers and environmental animation
+    WorldRenderer.ts          Bounded panorama pan and environmental animation
   entities/
     Player.ts                 Body, input state, character animation selection
     Obstacle.ts               Hazard behavior and forgiving collision bounds
@@ -79,13 +109,15 @@ src/
   systems/
     AudioManager.ts           Procedural audio plus file replacement hooks
     LocalizationManager.ts    Arabic / English labels and Kuwaiti messages
-    SaveManager.ts            Validated versioned LocalStorage
+    SaveManager.ts            Validated saves, revision ordering and write queue
     ScoreManager.ts           Level scoring and campaign statistics
   ui/
     GameUI.ts                 All menu screens, HUD, touch controls
     icons.ts                  Reusable interface icons
   utils/ArcadeArt.ts          Sprite extraction, pose normalization, looping street textures
-  utils/arcadeFrames.json     Reviewed source bounds and stage floor alignment
+  utils/arcadeFrames.json     Reviewed sprite source bounds
+  utils/sceneryLayout.json    Landmark panoramas, exact signs and floor alignment
+  platform/                  Android lifecycle/storage and controller input
   utils/PixelArtGenerator.ts  Original procedural art and collision-root texture
 tests/
   core.test.ts                Save corruption, persistence, scoring, level safety
@@ -96,7 +128,7 @@ The game renders at **1280 × 720** with responsive 16:9 scaling. A centered 2×
 
 ## Arcade art and animation
 
-The five 1672 × 941 backgrounds share a visual direction but have independently reviewed floor coordinates. `ArcadeArt.ts` prepares overlapping image edges for continuous scrolling and extracts the foreground street. The scenery scrolls at 0.34 of camera speed; the street moves at full speed. Birds, dust motes, wind, sparks, pickup movement, landing dust and confetti add motion.
+The five 1672 × 941 backgrounds share a visual direction but have independently reviewed floor coordinates. `ArcadeArt.ts` renders exact Arabic shop signs and extracts a looping foreground street from each panorama. Each unique panorama pans slowly across its available width as the stage progresses. Landmarks never loop, mirror, or crossfade. The street moves at full speed. Birds, dust motes, wind, sparks, pickup movement, landing dust and confetti add motion.
 
 The 1254 × 1254 hero atlas includes eight running frames, two idle poses, jump, fall, hurt, death, and two celebration poses. Custom rectangles in `arcadeFrames.json` preserve frames that cross nominal grid boundaries. Each frame is normalized to a 192 × 160 canvas with a shared foot baseline. The visible sprite follows an invisible 36 × 48 physics root after physics updates. Its **19 × 39 collision body at offset (9, 9)** remains unchanged. Landing squash affects only the visual sprite.
 
@@ -104,9 +136,9 @@ The main transparent prop atlas provides tea, both dallahs, cart, cat, crate, co
 
 To replace artwork:
 
-1. Replace the corresponding PNG under `public/assets/arcade/`.
+1. Replace the corresponding source PNG under `art/source/`, then run `npm run assets:prepare`.
 2. Update `arcadeFrames.json` bounds for the main hero/props sheets, or the extra-hazard bounds in `ArcadeArt.ts`. Bounds are `[left, top, rightExclusive, bottomExclusive]`.
-3. For backgrounds, update `floorY` to the painted curb edge. The renderer aligns it to world y=300.
+3. For backgrounds, update `sceneryLayout.json` and its `floorY` to the painted curb edge. The renderer aligns it to world y=300.
 4. Adjust `propHeight` or `HERO_SCALE` for visual size, keeping collision geometry separate.
 5. Run the browser tests and inspect all five stage screenshots at desktop and phone sizes.
 
@@ -157,7 +189,7 @@ All course contents are generated deterministically from level data. Hazard spac
 
 ```bash
 npm test
-npx playwright test
+npm run test:browser
 ```
 
 Start `npm run dev` before browser tests. By default the browser test config uses installed macOS Google Chrome. Set `CHROME_PATH` to a Chrome executable on another system. These tests use fresh browser contexts and do not modify your personal save data.
@@ -168,3 +200,7 @@ The test suite covers cold loading, download failure/retry, HD rendering, all st
 
 Game artwork was generated for this project from the user’s supplied visual direction, then integrated as sprite atlases and scrolling scenes. It uses original Kuwaiti characters and settings; no Metal Slug characters or game assets are included. Synthesized audio is original. Changa and Space Grotesk are bundled via Fontsource under the SIL Open Font License; their license files are included in the corresponding packages.
 Phaser documentation: https://docs.phaser.io/phaser/concepts/physics/arcade
+
+Release-specific regression tests cover fixed simulation at 15/30/60/120/144 fps, mixed-input release, pause velocity, finish landing, reset ordering, native recovery, controller background gating, phone/tablet targets, and local license navigation. See `scripts/check-android.mjs` and `scripts/check-desktop.mjs` for isolated installed-build smoke tests. Native smoke tests use an Android emulator through ADB and a separate desktop profile.
+
+[Artwork provenance](docs/ART_PROVENANCE.md) · [Privacy draft requiring publisher details](docs/PRIVACY_POLICY_DRAFT.md)

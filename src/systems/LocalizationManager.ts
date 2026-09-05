@@ -56,3 +56,6 @@ export const t = (key: CopyKey) =>
   copy[key][save.data.settings.language === "ar" ? 0 : 1];
 export const bilingual = (ar: string, en: string) =>
   save.data.settings.language === "ar" ? ar : en;
+
+// The game world keeps its Kuwaiti voice independently of menu preferences.
+export const worldT = (key: CopyKey) => copy[key][0];

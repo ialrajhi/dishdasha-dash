@@ -89,7 +89,7 @@ test("real obstacle damage, death, checkpoint respawn, and game over", async ({
     "{const s=window.__DASH__.scene();s.damage(true);s.damage(true);s.damage(true)}",
   );
   await expect(page.locator(".view-over")).toBeVisible();
-  await expect(page.locator(".view-over h1")).toContainText("راحت عليك");
+  await expect(page.locator(".view-over h1")).toContainText("One more try?");
   await page.locator('[data-action="restart"]').click();
   await page.waitForTimeout(200);
   expect(await app(page, "window.__DASH__.snapshot().lives")).toBe(3);
@@ -118,7 +118,7 @@ test("all five completion transitions, victory and persistent unlocks", async ({
     );
     if (level < 5) await page.locator('[data-action="next"]').click();
   }
-  await expect(page.locator(".victory-modal")).toContainText("مبروك يا بطل!");
+  await expect(page.locator(".victory-modal")).toContainText("You made it!");
   await page.screenshot({ path: "test-results/victory.png" });
   await page.locator('[data-action="levels"]').click();
   expect(await page.locator(".level-card:not(:disabled)").count()).toBe(5);

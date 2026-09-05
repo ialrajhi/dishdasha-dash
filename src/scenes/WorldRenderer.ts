@@ -2,28 +2,31 @@ import Phaser from "phaser";
 import { GROUND } from "../config/Constants";
 import type { LevelConfig, Course } from "../levels/levels";
 import { floorY } from "../utils/ArcadeArt";
+import { save } from "../systems/SaveManager";
 
 /** A richly painted middle distance and a separate street scrolling at walking speed. */
 export class WorldRenderer {
-  private scenery: Phaser.GameObjects.TileSprite;
+  private scenery: Phaser.GameObjects.Image;
   private street: Phaser.GameObjects.TileSprite;
   private atmosphere: Phaser.GameObjects.Graphics;
   private artScale: number;
+  private courseLength: number;
   constructor(
     private scene: Phaser.Scene,
     private level: LevelConfig,
     course?: Course,
   ) {
-    this.artScale = GROUND / floorY[level.id - 1];
+    this.artScale = (GROUND / floorY[level.id - 1]) * 1.06;
+    this.courseLength = course?.length ?? 0;
     // Phaser's centered, zoomed camera shifts fixed objects by half the logical viewport.
     const fixed = scene.add
       .container(320, 180)
       .setScrollFactor(0)
       .setDepth(-20);
     this.scenery = scene.add
-      .tileSprite(0, 0, 640, 360, `scenery-${level.id}`)
+      .image(0, GROUND - floorY[level.id - 1] * this.artScale, `scenery-${level.id}`)
       .setOrigin(0)
-      .setTileScale(this.artScale);
+      .setScale(this.artScale);
     this.street = scene.add
       .tileSprite(0, GROUND, 640, 60, `street-${level.id}`)
       .setOrigin(0)
@@ -99,10 +102,13 @@ export class WorldRenderer {
   }
   update(now: number, offset?: number) {
     const x = offset ?? this.scene.cameras.main.scrollX + 320;
-    this.scenery.tilePositionX = (x * 0.34) / this.artScale;
+    // A unique landmark panorama: never duplicate, mirror, or blend the towers.
+    const progress = this.courseLength ? Phaser.Math.Clamp(x / this.courseLength, 0, 1) : (1 - Math.cos(now / 24000)) / 2;
+    this.scenery.x = -Math.max(0, this.scenery.displayWidth - 640) * progress;
     this.street.tilePositionX = x / this.artScale;
     const g = this.atmosphere;
     g.clear();
+    if (save.data.settings.reducedMotion) return;
     if (this.level.id < 3) {
       g.lineStyle(0.9, 0x354c62, 0.65);
       for (let i = 0; i < 5; i++) {

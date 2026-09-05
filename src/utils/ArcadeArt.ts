@@ -1,16 +1,16 @@
 import Phaser from "phaser";
 import frames from "./arcadeFrames.json";
+import sceneryLayout from "./sceneryLayout.json";
 import { LEVELS } from "../levels/levels";
 
 /** Source bounds are hand-reviewed: several poses cross their nominal grid cell. */
 export const HERO_SCALE = 0.52;
-export const floorY = frames.floorY;
+export const floorY = sceneryLayout.floorY;
 export function preloadArcadeArt(scene: Phaser.Scene) {
   for (const level of LEVELS)
-    scene.load.image(`scene-${level.id}`, `/assets/arcade/${level.theme}.png`);
-  scene.load.image("hero-sheet", "/assets/arcade/hero-sheet.png");
-  scene.load.image("props-sheet", "/assets/arcade/props-sheet.png");
-  scene.load.image("extra-sheet", "/assets/arcade/extra-sheet.png");
+    scene.load.image(`scene-${level.id}`, `${import.meta.env.BASE_URL}assets/arcade/${level.theme}.webp`);
+  for (const key of ["hero-sheet", "props-sheet", "extra-sheet"])
+    scene.load.image(key, `${import.meta.env.BASE_URL}assets/arcade/${key}.webp`);
 }
 
 function crop(
@@ -156,7 +156,26 @@ export function prepareArcadeArt(scene: Phaser.Scene) {
     const source = scene.textures
       .get(`scene-${level.id}`)
       .getSourceImage() as HTMLImageElement;
-    loopTexture(scene, `scenery-${level.id}`, source, 150);
+    const painted = document.createElement("canvas");
+    painted.width = source.width;
+    painted.height = source.height;
+    const ctx = painted.getContext("2d")!;
+    ctx.drawImage(source, 0, 0);
+    const labels: Record<string, string> = { grocery: "بقالة بو خالد", mainFacade: "الجمعية التعاونية", spicesDates: "بهارات وتمور", textiles: "أقمشة كويتية", streetPlaque: "المباركية" };
+    for (const sign of sceneryLayout.signs[level.theme]) {
+      const label = labels[sign.id];
+      if (!label) continue;
+      const [left, top, right, bottom] = sign.bounds;
+      let size = Math.floor((bottom - top) * 0.67);
+      ctx.direction = "rtl";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      do { ctx.font = `700 ${size--}px "Changa Variable", sans-serif`; }
+      while (ctx.measureText(label).width > right - left - 16 && size > 8);
+      ctx.fillStyle = sign.suggestedTextColor;
+      ctx.fillText(label, (left + right) / 2, (top + bottom) / 2);
+    }
+    scene.textures.addCanvas(`scenery-${level.id}`, painted);
     const canvas = document.createElement("canvas");
     canvas.width = source.width;
     canvas.height = source.height - floorY[level.id - 1];

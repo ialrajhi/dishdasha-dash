@@ -29,7 +29,7 @@ describe("persistent progress", () => {
     expect(s.data.unlocked).toBe(5);
     expect(s.data.best).toBe(0);
     expect(s.data.settings.volume).toBe(100);
-    expect(s.data.settings.language).toBe("ar");
+    expect(s.data.settings.language).toBe("en");
     expect(s.data.levels[1]).toEqual({ score: 0, tea: 0, golden: true });
   });
   it("persists unlocks and best records without overwriting better scores", () => {
@@ -112,4 +112,46 @@ describe("complete and fair courses", () => {
         expect(c.hazards.some((h) => Math.abs(h.x - gap.x) < 100)).toBe(false);
       }
     });
+});
+
+describe('release save guarantees', () => {
+  it('migrates earlier progress to English menus without losing records', () => {
+    memory.set(SAVE_KEY, JSON.stringify({ version:1, unlocked:4, best:12000, levels:{3:{score:9000,tea:50,golden:true}}, settings:{language:'ar',music:false,volume:30} }));
+    const s = new SaveManager();
+    expect(s.data.version).toBe(2);
+    expect(s.data.settings.language).toBe('en');
+    expect(s.data.unlocked).toBe(4);
+    expect(s.data.levels[3].golden).toBe(true);
+    s.settings({language:'ar'});
+    expect(new SaveManager().data.settings.language).toBe('ar');
+  });
+  it('serializes asynchronous native writes including a later reset', async () => {
+    const s = new SaveManager();
+    const writes: string[] = [];
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => release = resolve);
+    s.setWriter(async value => { if (!writes.length) await gate; writes.push(value); });
+    s.complete(1, 8000, 40, true, 8000);
+    s.reset();
+    release();
+    await s.flush();
+    expect(writes).toHaveLength(2);
+    expect(JSON.parse(writes[0]).unlocked).toBe(2);
+    expect(JSON.parse(writes[1]).unlocked).toBe(1);
+    expect(JSON.parse(writes[1]).revision).toBeGreaterThan(JSON.parse(writes[0]).revision);
+  });
+  it('reports failed native writes and successfully retries the latest state', async () => {
+    const s = new SaveManager();
+    let fail = true;
+    let stored = '';
+    s.setWriter(async value => { if (fail) throw Error('disk full'); stored = value; });
+    s.complete(2, 12000, 60, true, 20000);
+    await s.flush();
+    expect(s.storageAvailable).toBe(false);
+    fail = false;
+    s.persist();
+    await s.flush();
+    expect(s.storageAvailable).toBe(true);
+    expect(JSON.parse(stored).levels[2].golden).toBe(true);
+  });
 });

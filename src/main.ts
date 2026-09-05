@@ -9,9 +9,13 @@ import { save } from "./systems/SaveManager";
 import { audio } from "./systems/AudioManager";
 import { campaign } from "./systems/ScoreManager";
 import { DEV, WIDTH, HEIGHT } from "./config/Constants";
+import { initializePlatform, platformEvents, minimizeAndroid } from "./platform/Platform";
+import { GamepadInput } from "./platform/GamepadInput";
+await initializePlatform();
 let currentLevel = 1;
 let optionsReturn: Screen = "menu";
 let assetsReady = false;
+let foreground = true;
 const ui = new GameUI(action);
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -35,7 +39,7 @@ const game = new Phaser.Game({
   scene: [BootScene, MenuScene, GameScene],
   audio: { noAudio: true },
   render: { antialias: false },
-  fps: { target: 60, forceSetTimeOut: false },
+  fps: { target: 60, limit: 60, forceSetTimeOut: false },
 });
 game.events.on("assets-ready", () => {
   assetsReady = true;
@@ -49,7 +53,9 @@ game.events.on("art-ready", (textures: Phaser.Textures.TextureManager) => {
 const scene = () => game.scene.getScene("Game") as GameScene;
 const hooks: GameHooks = {
   hud: (s) => ui.hud(s),
-  notice: (text, duration) => ui.notice(text, duration),
+  notice: (text, duration) => {
+    if (ui.screen === "playing") ui.notice(text, duration);
+  },
   pause: () => pause(),
   over: (state, deaths) => {
     game.scene.pause("Game");
@@ -97,6 +103,9 @@ function resume() {
   ui.hud(scene().snapshot());
 }
 function back() {
+  if (document.querySelector('[role="alertdialog"]')) { ui.show("options"); return; }
+  if (ui.screen === "about") { ui.show("options"); return; }
+  if (ui.screen === "licenses") { ui.show("about"); return; }
   if (ui.screen === "options") {
     if (optionsReturn === "pause") ui.show("pause");
     else menu(optionsReturn);
@@ -104,6 +113,8 @@ function back() {
   else if (ui.screen !== "playing") menu();
 }
 async function fullscreen() {
+  const desktop = (window as Window & { desktopGame?: { fullscreen: () => Promise<void> } }).desktopGame;
+  if (desktop) { await desktop.fullscreen(); return; }
   const el = document.querySelector(".arcade-shell") as HTMLElement;
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
@@ -135,6 +146,9 @@ function action(name: string, value?: string) {
     audio.play("select");
   }
   switch (name) {
+    case "retry-save":
+      save.persist();
+      break;
     case "start":
       start();
       break;
@@ -164,6 +178,15 @@ function action(name: string, value?: string) {
       optionsReturn = ui.screen;
       ui.show("options");
       break;
+    case "about":
+      ui.show("about");
+      break;
+    case "licenses":
+      ui.show("licenses");
+      break;
+    case "quit":
+      void (window as Window & { desktopGame?: { quit: () => Promise<void> } }).desktopGame?.quit();
+      break;
     case "back":
       back();
       break;
@@ -180,13 +203,14 @@ function action(name: string, value?: string) {
       start(Math.min(5, currentLevel + 1), false);
       break;
     case "jump-down":
-      scene().pressJump();
+      scene().pressJump(value ?? "button");
       break;
     case "jump-up":
-      scene().releaseJump();
+      scene().releaseJump(value ?? "button");
       break;
     case "music":
     case "sfx":
+    case "reducedMotion":
       save.settings({ [name]: !save.data.settings[name] });
       audio.sync();
       ui.show("options");
@@ -224,9 +248,11 @@ function action(name: string, value?: string) {
       ui.confirmReset();
       break;
     case "reset-yes":
+      game.scene.stop("Game");
+      optionsReturn = "menu";
       save.reset();
       campaign.reset();
-      ui.show("options");
+      menu("options");
       break;
     case "reset-no":
       ui.show("options");
@@ -237,6 +263,13 @@ function action(name: string, value?: string) {
   }
 }
 ui.show("menu");
+window.addEventListener('save-recovered', () => {
+  if (ui.screen === 'playing') pause();
+  else ui.show(ui.screen);
+  audio.sync();
+  ui.notice(save.data.settings.language === 'ar' ? 'استرجعنا تقدمك المحفوظ' : 'Restored your saved progress');
+});
+new GamepadInput({ playing: () => ui.screen === "playing", ready: () => assetsReady, foreground: () => foreground, action });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     if (ui.screen === "playing") pause();
@@ -245,7 +278,26 @@ document.addEventListener("visibilitychange", () => {
     audio.pause(false);
 });
 window.addEventListener("blur", () => {
+  foreground = false;
   if (ui.screen === "playing") pause();
+  audio.pause(true);
+});
+window.addEventListener("focus", () => {
+  foreground = true;
+  if (!["pause", "over"].includes(ui.screen) && !document.hidden) audio.pause(false);
+});
+platformEvents(() => {
+  foreground = false;
+  if (ui.screen === "playing") pause();
+  audio.pause(true);
+  save.persist();
+}, () => {
+  foreground = true;
+  if (!["pause", "over"].includes(ui.screen)) audio.pause(false);
+}, () => {
+  if (ui.screen === "playing") pause();
+  else if (ui.screen === "menu") minimizeAndroid();
+  else back();
 });
 window.addEventListener("pagehide", () => save.persist());
 if (import.meta.env.DEV) {

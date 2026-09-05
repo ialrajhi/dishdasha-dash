@@ -78,7 +78,7 @@ test("cold loading protects the game, then every stage renders illustrated asset
 test("asset download failure offers recovery instead of a broken game", async ({
   page,
 }) => {
-  await page.route("**/hero-sheet.png", (route) => route.abort());
+  await page.route("**/hero-sheet.webp", (route) => route.abort());
   await page.goto("/?testing=1");
   await expect(page.locator('[data-action="reload"]')).toBeVisible();
   expect(
@@ -86,7 +86,7 @@ test("asset download failure offers recovery instead of a broken game", async ({
       (window as any).__DASH__.game.scene.isActive("Game"),
     ),
   ).toBe(false);
-  await page.unroute("**/hero-sheet.png");
+  await page.unroute("**/hero-sheet.webp");
   await page.locator('[data-action="reload"]').click();
   await expect(page.locator(".asset-loading")).toHaveCount(0);
   await expect(page.locator(".game-title")).toBeVisible();

@@ -1,0 +1,123 @@
+{
+  "floorY": [
+    747,
+    709,
+    694,
+    746,
+    718
+  ],
+  "signs": {
+    "neighborhood": [
+      {
+        "id": "grocery",
+        "bounds": [
+          198,
+          278,
+          580,
+          353
+        ],
+        "surface": "cream",
+        "suggestedTextColor": "#154e4a",
+        "normalized": {
+          "x": 0.118421,
+          "y": 0.29543,
+          "width": 0.228469,
+          "height": 0.079702
+        }
+      }
+    ],
+    "coop": [
+      {
+        "id": "mainFacade",
+        "bounds": [
+          610,
+          190,
+          1075,
+          287
+        ],
+        "surface": "cream",
+        "suggestedTextColor": "#087e83",
+        "normalized": {
+          "x": 0.364833,
+          "y": 0.201913,
+          "width": 0.27811,
+          "height": 0.103082
+        }
+      }
+    ],
+    "souq": [
+      {
+        "id": "spicesDates",
+        "bounds": [
+          618,
+          201,
+          886,
+          247
+        ],
+        "surface": "dark teal",
+        "suggestedTextColor": "#eeb65a",
+        "normalized": {
+          "x": 0.369617,
+          "y": 0.213603,
+          "width": 0.160287,
+          "height": 0.048884
+        }
+      },
+      {
+        "id": "textiles",
+        "bounds": [
+          1363,
+          211,
+          1588,
+          249
+        ],
+        "surface": "dark brown",
+        "suggestedTextColor": "#eeb65a",
+        "normalized": {
+          "x": 0.815191,
+          "y": 0.22423,
+          "width": 0.134569,
+          "height": 0.040383
+        }
+      },
+      {
+        "id": "streetPlaque",
+        "bounds": [
+          238,
+          328,
+          322,
+          352
+        ],
+        "surface": "blue",
+        "suggestedTextColor": "#f7deb1",
+        "normalized": {
+          "x": 0.142344,
+          "y": 0.348565,
+          "width": 0.050239,
+          "height": 0.025505
+        }
+      }
+    ],
+    "desert": [],
+    "wedding": [
+      {
+        "id": "centralFrieze",
+        "bounds": [
+          718,
+          254,
+          962,
+          268
+        ],
+        "surface": "dark warm brown",
+        "suggestedTextColor": "#f2c769",
+        "note": "Short optional label; this is a thin ornamental frieze.",
+        "normalized": {
+          "x": 0.429426,
+          "y": 0.269926,
+          "width": 0.145933,
+          "height": 0.014878
+        }
+      }
+    ]
+  }
+}

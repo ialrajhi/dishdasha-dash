@@ -1,0 +1,52 @@
+import { _electron as electron, expect } from '@playwright/test';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+const executablePath = process.argv[2] || (await import('electron')).default;
+const profile = await mkdtemp(join(tmpdir(), 'dishdasha-desktop-qa-'));
+const args = [...(process.argv[2] ? [] : ['desktop/main.cjs']), `--user-data-dir=${profile}`];
+const app = await electron.launch({ executablePath, args, timeout:30000 });
+const errors=[];
+try {
+  const page=await app.firstWindow();
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.waitForSelector('.asset-loading',{state:'detached'});
+  await expect(page.locator('.game-title')).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang','en');
+  await page.locator('[data-action="options"]').click();
+  await page.locator('[data-action="set-language"][data-value="en"]').click();
+  await page.locator('#volume').fill('35');
+  await page.locator('[data-action="fullscreen"]').last().click();
+  await new Promise(r=>setTimeout(r,500));
+  expect(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].isFullScreen() || BrowserWindow.getAllWindows()[0].isSimpleFullScreen())).toBe(true);
+  await page.locator('[data-action="fullscreen"]').last().click();
+  await page.locator('[data-action="about"]').click();
+  await page.locator('[data-action="licenses"]').click();
+  await expect(page.locator('#license-copy')).toContainText('THIRD-PARTY NOTICES');
+  await page.locator('.back-button').click();await page.locator('.back-button').click();await page.locator('.back-button').click();
+  await page.locator('[data-action="start"]').click();
+  await page.waitForTimeout(400);
+  await expect(page.locator('#level-label')).toContainText('الفريج');
+  await page.keyboard.down('Space');await page.waitForTimeout(120);await page.keyboard.up('Space');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.view-pause')).toBeVisible();
+  await mkdir('release/qa',{recursive:true});
+  await page.screenshot({path:'release/qa/desktop-packaged.png'});
+  const safety=await app.evaluate(({BrowserWindow})=>{
+    const p=BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences();
+    return {sandbox:p.sandbox,contextIsolation:p.contextIsolation,nodeIntegration:p.nodeIntegration};
+  });
+  expect(safety).toEqual({sandbox:true,contextIsolation:true,nodeIntegration:false});
+  expect(await page.evaluate(()=>typeof window.require)).toBe('undefined');
+  const external = await page.evaluate(async()=>{try { await fetch('https://example.com/');return 'allowed'; }catch{return 'blocked';}});
+  expect(external).toBe('blocked');
+  expect(errors).toEqual([]);
+  console.log('Desktop packaged smoke passed: load, menus, licenses, fullscreen, jump/pause, sandbox, blocked external network.', safety);
+} finally { await app.close(); }
+const second=await electron.launch({executablePath,args,timeout:30000});
+try {
+  const page=await second.firstWindow();await page.waitForSelector('.asset-loading',{state:'detached'});
+  await page.locator('[data-action="options"]').click();
+  await expect(page.locator('#volume')).toHaveValue('35');
+  console.log('Desktop settings persisted across process relaunch.');
+} finally { await second.close(); await rm(profile,{recursive:true,force:true}); }
