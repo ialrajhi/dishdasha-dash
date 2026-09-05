@@ -1,0 +1,454 @@
+import Phaser from "phaser";
+import { WIDTH, GROUND, DEV } from "../config/Constants";
+import {
+  LEVELS,
+  createCourse,
+  type Course,
+  type LevelConfig,
+} from "../levels/levels";
+import { Player } from "../entities/Player";
+import { Obstacle } from "../entities/Obstacle";
+import { Collectible } from "../entities/Collectible";
+import { WorldRenderer } from "./WorldRenderer";
+import {
+  ScoreManager,
+  campaign,
+  type LevelResult,
+} from "../systems/ScoreManager";
+import { save } from "../systems/SaveManager";
+import { audio } from "../systems/AudioManager";
+import { t, bilingual } from "../systems/LocalizationManager";
+import { generateArt } from "../utils/PixelArtGenerator";
+export interface Snapshot {
+  level: number;
+  score: number;
+  tea: number;
+  totalTea: number;
+  hearts: number;
+  lives: number;
+  progress: number;
+  golden: boolean;
+}
+export interface GameHooks {
+  hud: (state: Snapshot) => void;
+  notice: (text: string, duration?: number) => void;
+  pause: () => void;
+  over: (state: Snapshot, deaths: number) => void;
+  complete: (result: LevelResult) => void;
+}
+export class GameScene extends Phaser.Scene {
+  player!: Player;
+  level!: LevelConfig;
+  course!: Course;
+  score!: ScoreManager;
+  hazards: Obstacle[] = [];
+  collectibles: Collectible[] = [];
+  hearts = 3;
+  lives = 3;
+  phase: "running" | "dead" | "complete" = "running";
+  checkpoint = 210;
+  gameTime = 0;
+  private world!: WorldRenderer;
+  private hooks!: GameHooks;
+  private keys = new Set<string>();
+  private lastHud = 0;
+  private debug?: Phaser.GameObjects.Graphics;
+  private finalNotice = false;
+  private shadow!: Phaser.GameObjects.Ellipse;
+  constructor() {
+    super("Game");
+  }
+  init(data: { level: number; hooks: GameHooks }) {
+    this.level = LEVELS[data.level - 1];
+    this.hooks = data.hooks;
+    this.course = createCourse(this.level);
+    this.score = new ScoreManager();
+    this.hearts = 3;
+    this.lives = 3;
+    this.phase = "running";
+    this.checkpoint = 210;
+    this.gameTime = 0;
+    this.keys.clear();
+    this.lastHud = 0;
+    this.finalNotice = false;
+  }
+  create() {
+    generateArt(this);
+    this.world = new WorldRenderer(this, this.level, this.course);
+    const ground = this.physics.add.staticGroup();
+    let start = 0;
+    for (const gap of [
+      ...this.course.gaps,
+      { x: this.course.length + 500, width: 0 },
+    ]) {
+      const slab = this.add
+        .rectangle(start, GROUND, gap.x - start, 100, 0, 0)
+        .setOrigin(0);
+      ground.add(slab);
+      (slab.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
+      start = gap.x + gap.width;
+    }
+    this.player = new Player(this, 210, GROUND);
+    this.physics.add.collider(this.player, ground);
+    this.shadow = this.add
+      .ellipse(210, GROUND, 26, 5, 0x524c3c, 0.27)
+      .setDepth(8);
+    this.populate();
+    this.cameras.main
+      .setBounds(0, 0, this.course.length + 260, 360)
+      .startFollow(this.player, true, 0.15, 1, -110, 0)
+      .setRoundPixels(true)
+      .fadeIn(350);
+    this.input.keyboard?.on("keydown", this.keyDown, this);
+    this.input.keyboard?.on("keyup", this.keyUp, this);
+    this.input.on("pointerdown", this.pointerDown, this);
+    this.input.on("pointerup", this.pointerUp, this);
+    this.input.on("pointerupoutside", this.pointerUp, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.input.keyboard?.off("keydown", this.keyDown, this);
+      this.input.keyboard?.off("keyup", this.keyUp, this);
+      this.input.off("pointerdown", this.pointerDown, this);
+      this.input.off("pointerup", this.pointerUp, this);
+      this.input.off("pointerupoutside", this.pointerUp, this);
+      this.keys.clear();
+    });
+    if (DEV.showHitboxes) this.debug = this.add.graphics().setDepth(100);
+    this.hooks.notice(this.level.intro, 2400);
+    this.publish();
+  }
+  private populate() {
+    this.hazards.forEach((h) => h.destroy());
+    this.collectibles.forEach((c) => c.destroy());
+    this.hazards = this.course.hazards
+      .filter((h) => h.x > this.checkpoint - 80)
+      .map((h) => new Obstacle(this, h));
+    this.collectibles = this.course.tea
+      .filter((c) => !this.score.collected.has(c.id))
+      .map((c) => new Collectible(this, c));
+  }
+  private keyDown(e: KeyboardEvent) {
+    if (["Space", "ArrowUp", "KeyW"].includes(e.code)) {
+      e.preventDefault();
+      if (!this.keys.has(e.code)) {
+        this.keys.add(e.code);
+        this.pressJump();
+      }
+    }
+    if (e.code === "Escape" && !e.repeat) this.requestPause();
+  }
+  private keyUp(e: KeyboardEvent) {
+    this.keys.delete(e.code);
+    if (["Space", "ArrowUp", "KeyW"].includes(e.code) && !this.keys.size)
+      this.releaseJump();
+  }
+  private pointerDown(pointer: Phaser.Input.Pointer) {
+    if (pointer.x > WIDTH * 0.38) this.pressJump();
+  }
+  private pointerUp() {
+    this.releaseJump();
+  }
+  pressJump() {
+    if (this.phase === "running" && this.scene.isActive())
+      this.player.press(this.gameTime);
+  }
+  releaseJump() {
+    if (this.player) this.player.release();
+  }
+  clearInput() {
+    this.keys.clear();
+    this.releaseJump();
+    this.player.bufferedAt = -1000;
+  }
+  requestPause() {
+    if (this.scene.isActive() && this.phase !== "complete") {
+      this.clearInput();
+      this.hooks.pause();
+    }
+  }
+  snapshot(): Snapshot {
+    return {
+      level: this.level.id,
+      score: this.score.score,
+      tea: this.score.tea,
+      totalTea: this.course.tea.filter((c) => !c.golden).length,
+      hearts: this.hearts,
+      lives: this.lives,
+      progress: Math.min(
+        1,
+        Math.max(0, (this.player.x - 210) / (this.course.length - 210)),
+      ),
+      golden: this.score.golden,
+    };
+  }
+  private publish() {
+    this.hooks.hud(this.snapshot());
+  }
+  private burst(x: number, y: number, color: number, count = 8) {
+    for (let i = 0; i < count; i++) {
+      const p = this.add.image(x, y, "pixel").setTint(color).setDepth(25);
+      this.tweens.add({
+        targets: p,
+        x: x + Phaser.Math.Between(-26, 26),
+        y: y - Phaser.Math.Between(5, 32),
+        alpha: 0,
+        scale: 0,
+        duration: Phaser.Math.Between(250, 500),
+        onComplete: () => p.destroy(),
+      });
+    }
+  }
+  private floating(text: string, x: number, y: number, color = "#fff2bc") {
+    const label = this.add
+      .text(x, y, text, {
+        fontFamily: "monospace",
+        fontSize: "11px",
+        fontStyle: "bold",
+        color,
+        stroke: "#456057",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(30);
+    this.tweens.add({
+      targets: label,
+      y: y - 27,
+      alpha: 0,
+      delay: 100,
+      duration: 700,
+      onComplete: () => label.destroy(),
+    });
+  }
+  damage(force = false) {
+    if (
+      this.phase !== "running" ||
+      (!force &&
+        (DEV.invincible || this.gameTime < this.player.invulnerableUntil))
+    )
+      return;
+    this.hearts--;
+    this.player.invulnerableUntil = this.gameTime + 1200;
+    this.player.hurtUntil = this.gameTime + 220;
+    this.player.setVelocityX(-55);
+    this.player.setTint(0xff9b82);
+    this.time.delayedCall(140, () => this.player.clearTint());
+    this.cameras.main.shake(140, 0.004);
+    this.burst(this.player.x, this.player.y - 20, 0xf1a080);
+    audio.play("damage");
+    this.publish();
+    if (this.hearts <= 0) this.die();
+  }
+  die() {
+    if (this.phase !== "running") return;
+    this.phase = "dead";
+    this.lives--;
+    this.score.deaths++;
+    campaign.deaths++;
+    this.player.state = "dead";
+    this.player.setVelocity(0, 0);
+    this.player.bodyRef.enable = false;
+    this.cameras.main.stopFollow();
+    this.burst(this.player.x, this.player.y - 20, 0xffe4bb, 16);
+    audio.play("death");
+    this.hooks.notice("يا ساتر!", 1700);
+    this.publish();
+    this.time.delayedCall(650, () =>
+      this.cameras.main.fadeOut(400, 30, 39, 41),
+    );
+    this.time.delayedCall(1150, () => {
+      if (this.lives <= 0) {
+        save.highScore(campaign.total() + this.score.score);
+        this.hooks.over(this.snapshot(), this.score.deaths);
+      } else this.respawn();
+    });
+  }
+  private respawn() {
+    this.hearts = 3;
+    this.phase = "running";
+    this.populate();
+    this.player.bodyRef.enable = true;
+    this.player.bodyRef.reset(this.checkpoint, GROUND);
+    this.player.setVelocity(0, 0);
+    this.player.state = "respawn";
+    this.player.held = false;
+    this.player.bufferedAt = -1000;
+    this.player.invulnerableUntil = this.gameTime + 1400;
+    this.player.hurtUntil = 0;
+    this.player.lastGrounded = -1000;
+    this.cameras.main.scrollX = Math.max(0, this.checkpoint - 210);
+    this.cameras.main
+      .startFollow(this.player, true, 0.15, 1, -110, 0)
+      .fadeIn(350);
+    this.publish();
+  }
+  finish() {
+    if (this.phase !== "running") return;
+    this.phase = "complete";
+    this.player.setVelocity(0, 0);
+    this.player.bodyRef.allowGravity = false;
+    this.player.state = "victory";
+    this.clearInput();
+    const result = this.score.finish(
+      this.level.id,
+      this.snapshot().totalTea,
+      this.hearts,
+      this.lives,
+    );
+    campaign.results.set(this.level.id, result);
+    save.complete(
+      result.id,
+      result.score,
+      result.tea,
+      result.golden,
+      campaign.total(),
+    );
+    audio.play(this.level.id === 5 ? "victory" : "complete");
+    this.hooks.notice(this.level.finish, 1700);
+    this.publish();
+    for (let i = 0; i < 60; i++) {
+      const p = this.add
+        .image(
+          this.player.x + Phaser.Math.Between(-160, 280),
+          Phaser.Math.Between(-80, 130),
+          "pixel",
+        )
+        .setTint([0xeec67a, 0xf29191, 0x84c6b5, 0xffffff][i % 4])
+        .setDepth(40);
+      this.tweens.add({
+        targets: p,
+        y: 360,
+        x: p.x + Phaser.Math.Between(-70, 70),
+        angle: 360,
+        duration: 1600 + i * 14,
+        onComplete: () => p.destroy(),
+      });
+    }
+    this.time.delayedCall(2100, () => this.hooks.complete(result));
+  }
+  update(_time: number, delta: number) {
+    this.gameTime += Math.min(delta, 50);
+    const now = this.gameTime;
+    this.world.update(now);
+    this.player.animate(now);
+    this.shadow
+      .setPosition(this.player.x, GROUND + 1)
+      .setScale(Math.max(0.35, 1 - (GROUND - this.player.y) / 180));
+    if (this.phase !== "running") return;
+    const body = this.player.bodyRef;
+    const grounded = body.blocked.down || body.touching.down;
+    if (grounded) {
+      this.player.lastGrounded = now;
+      if (!this.player.wasGrounded) {
+        this.burst(this.player.x, this.player.y - 2, 0xf0d6a4, 6);
+        audio.play("land");
+        this.tweens.add({
+          targets: this.player,
+          scaleY: 0.91,
+          scaleX: 1.06,
+          duration: 70,
+          yoyo: true,
+        });
+      }
+    }
+    if (
+      now - this.player.bufferedAt <= 140 &&
+      now - this.player.lastGrounded <= 110
+    ) {
+      this.player.setVelocityY(-430);
+      this.player.lastGrounded = -1000;
+      this.player.bufferedAt = -1000;
+      this.burst(this.player.x, this.player.y - 2, 0xf0d6a4, 5);
+      audio.play("jump");
+    }
+    this.player.wasGrounded = grounded;
+    body.setGravityY(!this.player.held && body.velocity.y < 0 ? 450 : 0);
+    const finalSprint =
+      this.level.id === 5 &&
+      this.player.x > this.course.length - this.level.speed * 15;
+    if (finalSprint && !this.finalNotice) {
+      this.finalNotice = true;
+      this.hooks.notice("شد حيلك! العرس ناطرك!", 2000);
+    }
+    if (now >= this.player.hurtUntil)
+      this.player.setVelocityX(this.level.speed * (finalSprint ? 1.08 : 1));
+    this.player.state =
+      now < this.player.hurtUntil
+        ? "hurt"
+        : now < this.player.invulnerableUntil && this.player.state === "respawn"
+          ? "respawn"
+          : body.velocity.y < -15
+            ? "jump"
+            : !grounded && body.velocity.y > 15
+              ? "fall"
+              : "run";
+    if (this.player.y > 365) {
+      if (DEV.invincible) {
+        this.player.bodyRef.reset(this.player.x + 75, GROUND - 80);
+        this.player.setVelocityY(-100);
+      } else this.die();
+      return;
+    }
+    if (this.checkpoint === 210 && this.player.x >= this.course.checkpoint) {
+      this.checkpoint = this.course.checkpoint;
+      this.hooks.notice(t("checkpoint"), 2000);
+      audio.play("select");
+    }
+    const playerBox = new Phaser.Geom.Rectangle(
+      body.x,
+      body.y,
+      body.width,
+      body.height,
+    );
+    for (const h of this.hazards) {
+      h.tick(now, this.player.x, this.level.id);
+      const distance = h.x - this.player.x;
+      if (distance < 320 && distance > 0 && !h.warned && h.spec.moving) {
+        h.warned = true;
+        if (h.spec.kind === "dallah" || h.spec.kind === "cart")
+          this.floating(
+            h.spec.kind === "dallah" ? "دلة جايتك!" : "عربانة!",
+            h.x,
+            GROUND - 62,
+            "#ffe1a0",
+          );
+      }
+      if (
+        !h.hit &&
+        Phaser.Geom.Intersects.RectangleToRectangle(playerBox, h.hitbox())
+      ) {
+        h.hit = true;
+        this.score.resolved.add(h.spec.id);
+        this.damage();
+      }
+      if (distance < -35 && !h.hit) this.score.avoid(h.spec.id);
+    }
+    for (const c of this.collectibles) {
+      if (!c.active) continue;
+      c.tick(now);
+      if (
+        Phaser.Geom.Intersects.RectangleToRectangle(playerBox, c.hitbox()) &&
+        this.score.collect(c.spec.id, c.spec.golden)
+      ) {
+        c.setActive(false).setVisible(false);
+        this.burst(c.x, c.y, c.spec.golden ? 0xffd166 : 0xffe5a3, 10);
+        this.floating(c.spec.golden ? "+5,000" : "+100", c.x, c.y - 13);
+        audio.play(c.spec.golden ? "golden" : "tea");
+        if (c.spec.golden) {
+          save.golden(this.level.id);
+          this.hooks.notice(
+            bilingual("لقيت الدلة الذهبية!", "Golden Dallah found!"),
+            1900,
+          );
+        }
+      }
+    }
+    if (now - this.lastHud > 70) {
+      this.lastHud = now;
+      this.publish();
+    }
+    if (this.player.x >= this.course.length) this.finish();
+    if (this.debug) {
+      this.debug.clear().lineStyle(1, 0xff3344).strokeRectShape(playerBox);
+      this.hazards.forEach((h) => this.debug!.strokeRectShape(h.hitbox()));
+    }
+  }
+}
