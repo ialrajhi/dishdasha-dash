@@ -1,5 +1,41 @@
 import { test, expect } from "@playwright/test";
 
+test("menu stays still and running uses grounded alternating strides without branding", async ({ page }) => {
+  await page.goto("/?testing=1");
+  await expect(page.locator(".asset-loading")).toHaveCount(0);
+  const menu = await page.evaluate(() => {
+    const s = (window as any).__DASH__.game.scene.getScene("Menu");
+    const before = [s.world.scenery.x, s.world.street.tilePositionX, s.runner.x, s.runner.y];
+    const poses = [0, 7000, 11000, 13900].map(time => { s.update(time); return s.runner.texture.key; });
+    return { before, after: [s.world.scenery.x, s.world.street.tilePositionX, s.runner.x, s.runner.y], poses };
+  });
+  expect(menu.after).toEqual(menu.before);
+  expect(menu.poses).toEqual(["hero-idle", "hero-victoryWave", "hero-victoryFists", "hero-idle"]);
+  await page.evaluate(() => (window as any).__DASH__.start(2));
+  await page.waitForFunction(() => (window as any).__DASH__.scene()?.player?.x > 240);
+  await expect(page.locator(".hud-brand")).toHaveCount(0);
+  await expect(page.locator(".shell-header .wordmark")).toBeHidden();
+  const gait = await page.evaluate(() => {
+    const s = (window as any).__DASH__.scene();
+    s.scene.pause();
+    const p = s.player;
+    p.state = "run";
+    p.resetVisual();
+    const hero = [0, 1, 2, 3].map(i => { p.x += 16; p.animate(i * 100); return p.visual.texture.key; });
+    const stationary = p.visual.texture.key;
+    p.animate(9000);
+    const kid = s.hazards.find((h: any) => h.spec.kind === "kid");
+    const feet: number[] = [];
+    kid.motionStart = 0;
+    const boy = [0, 1, 2, 3].map(i => { kid.tick(i * 6 / 38 * 1000 + 1, kid.x, 2); feet.push(kid.y); return kid.texture.key; });
+    return { hero, stationary, stopped: p.visual.texture.key, boy, feet };
+  });
+  expect(new Set(gait.hero).size).toBe(4);
+  expect(gait.stopped).toBe(gait.stationary);
+  expect(new Set(gait.boy).size).toBe(4);
+  expect(new Set(gait.feet).size).toBe(1);
+});
+
 test("cold loading protects the game, then every stage renders illustrated assets", async ({
   page,
 }) => {

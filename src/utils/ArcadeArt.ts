@@ -9,7 +9,7 @@ export const floorY = sceneryLayout.floorY;
 export function preloadArcadeArt(scene: Phaser.Scene) {
   for (const level of LEVELS)
     scene.load.image(`scene-${level.id}`, `${import.meta.env.BASE_URL}assets/arcade/${level.theme}.webp`);
-  for (const key of ["hero-sheet", "props-sheet", "extra-sheet"])
+  for (const key of ["hero-sheet", "props-sheet", "extra-sheet", "hero-run-sheet", "kid-run-sheet"])
     scene.load.image(key, `${import.meta.env.BASE_URL}assets/arcade/${key}.webp`);
 }
 
@@ -139,7 +139,17 @@ function loopTexture(
 }
 export function prepareArcadeArt(scene: Phaser.Scene) {
   for (const [name, bounds] of Object.entries(frames.hero))
-    crop(scene, "hero-sheet", `hero-${name}`, bounds, true);
+    if (!name.startsWith("run")) crop(scene, "hero-sheet", `hero-${name}`, bounds, true);
+  for (const actor of ["hero", "kid"]) {
+    const source = scene.textures.get(`${actor}-run-sheet`).getSourceImage() as HTMLImageElement;
+    for (let frame = 0; frame < 4; frame++) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 192;
+      canvas.height = 160;
+      canvas.getContext("2d")!.drawImage(source, frame * 192, 0, 192, 160, 0, 0, 192, 160);
+      scene.textures.addCanvas(`${actor === "hero" ? "hero-run" : "arcade-kid"}-stride-${frame}`, canvas);
+    }
+  }
   for (const [name, bounds] of Object.entries(frames.objects))
     crop(scene, "props-sheet", `arcade-${objectNames[name]}`, bounds);
   const extra: Record<string, number[]> = {
@@ -195,11 +205,11 @@ export function prepareArcadeArt(scene: Phaser.Scene) {
     loopTexture(scene, `street-${level.id}`, canvas, 64);
     scene.textures.remove(`scene-${level.id}`);
   }
-  for (const sheet of ["hero-sheet", "props-sheet", "extra-sheet"])
+  for (const sheet of ["hero-sheet", "props-sheet", "extra-sheet", "hero-run-sheet", "kid-run-sheet"])
     scene.textures.remove(sheet);
 }
 export function heroFrame(state: string, time: number) {
-  if (state === "run") return `hero-run${(Math.floor(time / 78) % 8) + 1}`;
+  if (state === "run") return `hero-run-stride-${Math.floor(time / 110) % 4}`;
   if (state === "idle" || state === "respawn")
     return Math.floor(time / 360) % 2 ? "hero-idleBreathe" : "hero-idle";
   if (state === "victory")

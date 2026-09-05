@@ -1,8 +1,8 @@
 {
-  "version": "1.1.0",
+  "version": "1.1.1",
   "checkedDate": "2026-09-05",
   "unitTests": 18,
-  "browserTests": 14,
+  "browserTests": 15,
   "browserTestsSkipped": 0,
   "androidPhone": {
     "testedAt": "2026-09-05T18:33:22.027Z",
@@ -16,7 +16,9 @@
     },
     "wifi": "0",
     "saveRestored": true,
-    "errors": []
+    "errors": [],
+    "testedVersion": "1.1.0",
+    "currentVersionRetested": false
   },
   "androidTablet": {
     "testedAt": "2026-09-05T18:35:20.294Z",
@@ -30,7 +32,9 @@
     },
     "wifi": "0",
     "saveRestored": true,
-    "errors": []
+    "errors": [],
+    "testedVersion": "1.1.0",
+    "currentVersionRetested": false
   },
   "desktop": {
     "electron": "44.2.0",
@@ -39,7 +43,7 @@
     "steamInstallation": "Not tested"
   },
   "androidRelease": {
-    "versionCode": 1,
+    "versionCode": 2,
     "targetSdk": 36,
     "lintErrors": 0,
     "lintWarnings": 12,
@@ -51,9 +55,18 @@
   "engineVideoPolyfillExcluded": true,
   "noticeAssetCheckedInApkAndAab": true,
   "artifactSha256": [
-    "51701b19d7a287f9fe2289285870c3e5f51b32282017ac7b345339ebc698ae36  Dishdasha-Dash-1.1.0-Windows-x64.zip",
-    "e7dc08c2957d0e37a6847722f329c9a87db5828d236684dc36d0a8c9c4d013d6  Dishdasha-Dash-1.1.0-macOS-arm64.zip",
-    "c6f435e9291f44fefd47279ed5c4c110958cc2d72e37d498af7cfcae3c6a5869  android/Dishdasha-Dash-1.1.0-test.apk",
-    "00b23397a0593b69277f3743a6b2076ee36721409695d8c53ac1ff610b99a1d2  android/Dishdasha-Dash-1.1.0-unsigned.aab"
-  ]
+    "3b3dbcaa0eb5daaaff32045392a1517efda246c5be3b3aae32ed626b8d16e657  Dishdasha-Dash-1.1.1-Windows-x64.zip",
+    "1fbaf0a5c7d530196ad90d1294664c5dfecea16e952ee0170bd156146e50e13b  Dishdasha-Dash-1.1.1-macOS-arm64.zip",
+    "6394a117fb282c8b02a6e379dd33c86c9cc48bb42d24e514a94d9fc1be04ec10  android/Dishdasha-Dash-1.1.1-test.apk",
+    "e0fc763ad9d789663a2039a3a41f15eb17705b0fe66d63cbd7de06e164fa8666  android/Dishdasha-Dash-1.1.1-unsigned.aab"
+  ],
+  "animationRevision": {
+    "heroFrames": 4,
+    "boyFrames": 4,
+    "distanceDriven": true,
+    "menuSceneryStationary": true,
+    "menuIdleGestures": true,
+    "gameplayBrandingRemoved": true,
+    "browserRegressionPassed": true
+  }
 }

@@ -12,6 +12,8 @@ export type PlayerState =
 export class Player extends Phaser.Physics.Arcade.Sprite {
   state: PlayerState = "run";
   private lastFrame = "";
+  private runDistance = 0;
+  private lastVisualX = 0;
   visual: Phaser.GameObjects.Sprite;
   lastGrounded = -1000;
   bufferedAt = -1000;
@@ -27,13 +29,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Keep collision geometry stable while giving the illustrated hero room to move.
     this.setVisible(false);
     this.visual = scene.add
-      .sprite(x, y, "hero-run1")
+      .sprite(x, y, "hero-run-stride-0")
       .setOrigin(0.5, 1)
       .setScale(HERO_SCALE)
       .setDepth(20);
     scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.syncVisual, this);
     this.bodyRef.setSize(19, 39).setOffset(9, 9);
     this.setMaxVelocity(260, 700);
+    this.lastVisualX = x;
   }
   get bodyRef() {
     return this.body as Phaser.Physics.Arcade.Body;
@@ -49,7 +52,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setVelocityY(this.bodyRef.velocity.y * 0.48);
   }
   animate(now: number) {
-    const key = heroFrame(this.state, now);
+    const movement = this.x - this.lastVisualX;
+    if (this.state === "run" && movement > 0 && movement < 80) this.runDistance += movement;
+    this.lastVisualX = this.x;
+    const key = this.state === "run"
+      ? `hero-run-stride-${Math.floor(this.runDistance / 64 * 4) % 4}`
+      : heroFrame(this.state, now);
     if (key !== this.lastFrame) {
       this.visual.setTexture(key);
       this.lastFrame = key;
@@ -75,6 +83,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   resetVisual() {
     this.scene.tweens.killTweensOf(this.visual);
     this.visual.setScale(HERO_SCALE).setAngle(0).clearTint().setAlpha(1);
+    this.lastVisualX = this.x;
+    this.runDistance = 0;
     this.syncVisual();
   }
   destroy(fromScene?: boolean) {

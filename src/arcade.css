@@ -982,3 +982,14 @@ body {
   .game-cabinet:has(#ui-layer:not(.view-playing)) { background-image:var(--level-art-1); background-size:cover; background-position:65% center; }
   .game-cabinet:has(#ui-layer:not(.view-playing)) #phaser-game { opacity:0; }
 }
+
+/* Gameplay keeps its space for health, score and the stage, without title branding. */
+.hud { grid-template-columns:31% 22% minmax(0,1fr) 44px; gap:2%; }
+.arcade-shell:has(.view-playing) .shell-header .wordmark,
+.arcade-shell:has(.view-playing) .shell-header .header-caption { visibility:hidden; pointer-events:none; }
+@media (max-width:1100px), (pointer:coarse) {
+  .hud { grid-template-columns:34% 21% minmax(0,1fr) 44px; gap:1%; }
+}
+@media (orientation:portrait) {
+  .hud { grid-template-columns:31% 23% minmax(0,1fr) 44px; gap:1%; }
+}

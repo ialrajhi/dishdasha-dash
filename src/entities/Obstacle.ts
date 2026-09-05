@@ -30,7 +30,7 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
     scene.add.existing(this);
     this.setOrigin(0.5, 1).setDepth(18);
     if (spec.kind === "waiter") this.setFlipX(true);
-    const key = propTexture(spec.kind);
+    const key = spec.kind === "kid" ? "arcade-kid-stride-0" : propTexture(spec.kind);
     if (scene.textures.exists(key)) {
       this.setTexture(key);
       this.artScale = (propHeight[spec.kind] ?? 36) / this.height;
@@ -53,10 +53,15 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
             ? 38
             : 19;
       this.x = this.originalX - ((now - this.motionStart) / 1000) * speed;
-      if (["dallah", "kid", "waiter", "goat"].includes(this.spec.kind))
+      if (["dallah", "waiter", "goat"].includes(this.spec.kind))
         this.y = GROUND - Math.abs(Math.sin(now / 85)) * 2;
     }
-    if (["dallah", "cat", "goat", "pigeon", "kid", "waiter"].includes(this.spec.kind)) {
+    if (this.spec.kind === "kid") {
+      const phase = Math.floor(Math.max(0, this.originalX - this.x) / 24 * 4) % 4;
+      this.setTexture(`arcade-kid-stride-${phase}`).setAngle(0).setScale(this.artScale);
+      this.y = GROUND;
+    }
+    if (["dallah", "cat", "goat", "pigeon", "waiter"].includes(this.spec.kind)) {
       this.setAngle(Math.sin(now / 125 + this.originalX) * 3);
       this.setScale(this.artScale * (1 + Math.sin(now / 125) * 0.025),
         this.artScale * (1 - Math.sin(now / 125) * 0.025));
