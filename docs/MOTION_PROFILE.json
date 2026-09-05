@@ -1,0 +1,81 @@
+{
+  "date": "2026-09-05T20:48:54.964Z",
+  "environment": "Headless Chrome on development Mac; viewport/touch emulation, not physical Android hardware",
+  "reports": [
+    {
+      "profile": {
+        "name": "desktop",
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1,
+        "touch": false
+      },
+      "frames": 390,
+      "medianMs": 16.699999999999818,
+      "p95Ms": 16.700000000000728,
+      "over33ms": 0,
+      "canvas": [
+        1920,
+        1080
+      ],
+      "heroTexture": [
+        384,
+        320
+      ],
+      "steadyView": true,
+      "renderer": 2,
+      "screen": "playing",
+      "errors": []
+    },
+    {
+      "profile": {
+        "name": "phone-landscape",
+        "width": 844,
+        "height": 390,
+        "dpr": 2.625,
+        "touch": true
+      },
+      "frames": 390,
+      "medianMs": 16.699999999999818,
+      "p95Ms": 16.700000000000728,
+      "over33ms": 0,
+      "canvas": [
+        1920,
+        1080
+      ],
+      "heroTexture": [
+        384,
+        320
+      ],
+      "steadyView": true,
+      "renderer": 2,
+      "screen": "playing",
+      "errors": []
+    },
+    {
+      "profile": {
+        "name": "tablet-landscape",
+        "width": 1280,
+        "height": 800,
+        "dpr": 1.5,
+        "touch": true
+      },
+      "frames": 390,
+      "medianMs": 16.699999999999818,
+      "p95Ms": 16.799999999999727,
+      "over33ms": 0,
+      "canvas": [
+        1920,
+        1080
+      ],
+      "heroTexture": [
+        384,
+        320
+      ],
+      "steadyView": true,
+      "renderer": 2,
+      "screen": "playing",
+      "errors": []
+    }
+  ]
+}

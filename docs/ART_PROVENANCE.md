@@ -1,6 +1,6 @@
 # Artwork and content inventory
 
-Reviewed 5 September 2026 for Dishdasha Dash 1.2.0.
+Reviewed 5 September 2026 for Dishdasha Dash 1.3.0.
 
 The game uses original AI-generated raster artwork made for this project from the user's Kuwaiti arcade visual direction. Reference photographs guided landmark shapes; the reference photographs themselves are not distributed. No Metal Slug sprites, characters, music, code, branding, or other game files are included. Metal Slug was a stylistic reference supplied by the user.
 
@@ -12,7 +12,7 @@ The game uses original AI-generated raster artwork made for this project from th
 | Desert panorama | Generated for this project; tall mesas removed for a flat open plain with shallow sandy ridges. Vehicles have no deliberate logos or written branding. |
 | Wedding panorama | Generated for this project; ambiguous generated calligraphic text removed; ornamental patterns retained. |
 | Hero, prop, and extra sprite atlases | Generated for this project; transparent backgrounds and reviewed extraction bounds. Idle, jump, fall, hurt, death, and celebration states. Superseded run poses are retained only in editable source. |
-| Hero and boy running strips | Generated for this project using built-in ImageGen. Four alternating contact/passing poses per character. RGB green source retained; reproducible chroma extraction, shared scaling and foot baseline alignment in `scripts/prepare-run-art.mjs`. Exact prompts retained in `art/source/run-cycle-prompts.json`. |
+| Hero and boy running strips | Generated for this project using built-in ImageGen. Twelve distinct contact/compression/passing/recovery drawings per character. RGB green source retained; reproducible chroma extraction, uniform pose scaling, crown/sole normalization and horizontal head anchoring in `scripts/prepare-run-art.mjs`. Exact prompts retained in `art/source/run12-manifest.json`. |
 | Go Dance cast | Twelve original characters, three painted dance poses each. Built-in ImageGen; green source atlases and prompts retained in `art/source/dance-*`; reproducible extraction in `scripts/prepare-dance-art.mjs`. No characters or assets taken from DDDance Party or another video game. |
 | Application icon | Generated for this project; friendly original hero with ghutra and agal on navy, no text. Technical icon conversions supply Android, macOS, and Windows formats. |
 | Interface and world text | Authored/edited for this game, reviewed for language roles. English menus by default; Arabic HUD, dialogue and shop signs. AI-assisted text should be covered accurately in Steam's Content Survey. |
@@ -27,3 +27,5 @@ The publisher must still confirm rights to their supplied references and all fin
 Third-party software and font license notices are bundled in `public/third-party-licenses.txt`, accessible through Options → About & privacy → Software & font licenses. Desktop distributions also retain Electron/Chromium license files supplied by Electron.
 
 Embedded engine and Android runtime notices are retained under `docs/licenses/` and generated into the offline asset. The unused RVFC video polyfill is excluded during engine preparation; its differing upstream license is documented in the engine provenance file.
+
+The supplied Metal Slug gameplay video was inspected through timestamped frames for movement principles only. It is not distributed. The generated twelve-pose cycle remains a stylized approximation: near/far ankle depth is not anatomically exact in every pose. Higher texture resolution and render interpolation do not imply hand-authored animation or guarantee individual motion comfort.

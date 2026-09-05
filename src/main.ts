@@ -9,7 +9,7 @@ import { GameScene, type GameHooks } from "./scenes/GameScene";
 import { save } from "./systems/SaveManager";
 import { audio } from "./systems/AudioManager";
 import { campaign } from "./systems/ScoreManager";
-import { DEV, WIDTH, HEIGHT } from "./config/Constants";
+import { DEV, WIDTH, HEIGHT, RENDER_SCALE } from "./config/Constants";
 import { initializePlatform, platformEvents, minimizeAndroid } from "./platform/Platform";
 import { GamepadInput } from "./platform/GamepadInput";
 await initializePlatform();
@@ -21,16 +21,16 @@ const ui = new GameUI(action);
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: "phaser-game",
-  width: WIDTH * 2,
-  height: HEIGHT * 2,
+  width: WIDTH * RENDER_SCALE,
+  height: HEIGHT * RENDER_SCALE,
   pixelArt: false,
   roundPixels: false,
   backgroundColor: "#529e9b",
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: WIDTH * 2,
-    height: HEIGHT * 2,
+    width: WIDTH * RENDER_SCALE,
+    height: HEIGHT * RENDER_SCALE,
   },
   physics: {
     default: "arcade",

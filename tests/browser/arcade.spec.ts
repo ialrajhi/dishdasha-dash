@@ -21,18 +21,18 @@ test("menu stays still and running uses grounded alternating strides without bra
     const p = s.player;
     p.state = "run";
     p.resetVisual();
-    const hero = [0, 1, 2, 3].map(i => { p.x += 16; p.animate(i * 100); return p.visual.texture.key; });
+    const hero = Array.from({length:12}, (_, i) => { p.x += 80 / 12; p.animate(i * 100); return p.visual.texture.key; });
     const stationary = p.visual.texture.key;
     p.animate(9000);
     const kid = s.hazards.find((h: any) => h.spec.kind === "kid");
     const feet: number[] = [];
     kid.motionStart = 0;
-    const boy = [0, 1, 2, 3].map(i => { kid.tick(i * 6 / 38 * 1000 + 1, kid.x, 2); feet.push(kid.y); return kid.texture.key; });
+    const boy = Array.from({length:12}, (_, i) => { kid.tick(i * (28 / 12) / 38 * 1000 + 1, kid.x, 2); feet.push(kid.y); return kid.texture.key; });
     return { hero, stationary, stopped: p.visual.texture.key, boy, feet };
   });
-  expect(new Set(gait.hero).size).toBe(4);
+  expect(new Set(gait.hero).size).toBe(12);
   expect(gait.stopped).toBe(gait.stationary);
-  expect(new Set(gait.boy).size).toBe(4);
+  expect(new Set(gait.boy).size).toBe(12);
   expect(new Set(gait.feet).size).toBe(1);
 });
 
@@ -65,11 +65,11 @@ test("cold loading protects the game, then every stage renders illustrated asset
   await expect(page.locator(".asset-loading")).toHaveCount(0);
   await expect(page.locator("#phaser-game canvas")).toHaveAttribute(
     "width",
-    "1280",
+    "1920",
   );
   await expect(page.locator("#phaser-game canvas")).toHaveAttribute(
     "height",
-    "720",
+    "1080",
   );
   for (let level = 1; level <= 5; level++) {
     await page.evaluate(
@@ -100,9 +100,9 @@ test("cold loading protects the game, then every stage renders illustrated asset
     expect(state.body).toEqual([19, 39]);
     expect(state.hiddenRoot).toBe(true);
     expect(state.hero).toMatch(/^hero-run/);
-    expect(state.sync).toBeLessThan(0.1);
+    expect(state.sync).toBeLessThan(4); // Render interpolation trails physics by at most one step.
     expect(state.hazards).toBe(true);
-    expect(state.zoom).toBe(2);
+    expect(state.zoom).toBe(3);
     expect(state.floor).toBe(true);
     await page
       .locator(".game-cabinet")

@@ -1,6 +1,10 @@
 export const WIDTH = 640;
 export const HEIGHT = 360;
 export const GROUND = 300;
+// Keep the world at 640×360 while retaining enough samples for a sharp full-screen image.
+export const RENDER_SCALE = 3;
+export const CAMERA_PAD_X = WIDTH * (RENDER_SCALE - 1) / 2;
+export const CAMERA_PAD_Y = HEIGHT * (RENDER_SCALE - 1) / 2;
 export const UNLOCK_ALL_LEVELS = false;
 export const DEV = {
   unlockAllLevels: UNLOCK_ALL_LEVELS,

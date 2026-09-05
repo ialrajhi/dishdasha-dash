@@ -1,8 +1,8 @@
 # Suggested next improvements
 
-These are proposals, not shipped features. Go Dance and the steady-view controls are shipped in 1.2.0.
+These are proposals, not shipped features. Go Dance and steady-view controls shipped in 1.2.0. Version 1.3.0 adds twelve-pose running cycles, larger textures and interpolated presentation.
 
-1. **A fuller running cycle.** Commission 8–12 deliberately animated poses with fixed head/hip anchors and consistent left/right foot contact. Assess a loop at actual phone size before replacing art. This is the strongest next step for reducing the visible snap of the current four-pose run.
+1. **Physical-device motion review and pose refinement.** Play the twelve-pose loops at actual phone and tablet sizes. Refine near/far leg separation and foot-contact timing with an animator if the generated poses still read as sliding. Browser frame timing does not establish individual comfort or mobile performance.
 2. **Tea-earned outfits.** Let players spend collected tea on original outfit colors, ghutra patterns and dance accessories. Keep rewards cosmetic so obstacle timing stays fair.
 3. **Short daily routes.** A reproducible 45–60 second course with one clear challenge: collect a tea trail, finish without a hit, or land three precise jumps. Offline seeds can keep it accessible without accounts.
 4. **More dance settings.** Empty courtyard, beach evening, and wedding hall backgrounds, all stationary. Add genuinely new pose sets such as clapping and traditional group steps, with a cultural review.

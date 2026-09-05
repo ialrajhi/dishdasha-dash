@@ -1,7 +1,8 @@
 import Phaser from "phaser";
+import { runFrame } from "../utils/runFrame";
 import { GROUND } from "../config/Constants";
 import type { HazardSpec } from "../levels/levels";
-import { propHeight, propTexture } from "../utils/ArcadeArt";
+import { propHeight, propTexture, runCycle } from "../utils/ArcadeArt";
 const sizes: Record<string, [number, number]> = {
   cone: [16, 26],
   cat: [28, 23],
@@ -23,10 +24,12 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
   motionStart?: number;
   private originalX: number;
   private artScale = 1;
+  private previousX = 0;
   constructor(scene: Phaser.Scene, spec: HazardSpec) {
     super(scene, spec.x, GROUND, propTexture(spec.kind));
     this.spec = spec;
     this.originalX = spec.x;
+    this.previousX = spec.x;
     scene.add.existing(this);
     this.setOrigin(0.5, 1).setDepth(18);
     if (spec.kind === "waiter") this.setFlipX(true);
@@ -37,6 +40,12 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       this.setScale(this.artScale);
       if (spec.kind === "ball") this.setOrigin(0.5).setY(GROUND - this.displayHeight / 2);
     }
+  }
+  capturePrevious() { this.previousX = this.x; }
+  present(alpha: number) {
+    if (this.spec.kind !== "kid") return;
+    const x = Phaser.Math.Linear(this.previousX, this.x, alpha);
+    this.setDisplayOrigin(this.width / 2 + (this.x - x) / this.artScale, this.height);
   }
   tick(now: number, playerX: number, level: number) {
     if (
@@ -57,7 +66,7 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
         this.y = GROUND - Math.abs(Math.sin(now / 85)) * 2;
     }
     if (this.spec.kind === "kid") {
-      const phase = Math.floor(Math.max(0, this.originalX - this.x) / 24 * 4) % 4;
+      const phase = runFrame(this.originalX - this.x, runCycle.kidStride, runCycle.count);
       this.setTexture(`arcade-kid-stride-${phase}`).setAngle(0).setScale(this.artScale);
       this.y = GROUND;
     }

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { GROUND } from "../config/Constants";
+import { GROUND, CAMERA_PAD_X, CAMERA_PAD_Y } from "../config/Constants";
 import type { LevelConfig, Course } from "../levels/levels";
 import { floorY } from "../utils/ArcadeArt";
 import { save } from "../systems/SaveManager";
@@ -20,7 +20,7 @@ export class WorldRenderer {
     this.courseLength = course?.length ?? 0;
     // Phaser's centered, zoomed camera shifts fixed objects by half the logical viewport.
     const fixed = scene.add
-      .container(320, 180)
+      .container(CAMERA_PAD_X, CAMERA_PAD_Y)
       .setScrollFactor(0)
       .setDepth(-20);
     this.scenery = scene.add
@@ -101,7 +101,7 @@ export class WorldRenderer {
     }
   }
   update(now: number, offset?: number) {
-    const x = offset ?? this.scene.cameras.main.scrollX + 320;
+    const x = offset ?? this.scene.cameras.main.scrollX + CAMERA_PAD_X;
     // A unique landmark panorama: never duplicate, mirror, or blend the towers.
     const progress = save.data.settings.steadyView ? .25 : this.courseLength ? Phaser.Math.Clamp(x / this.courseLength, 0, 1) : (1 - Math.cos(now / 24000)) / 2;
     this.scenery.x = -Math.max(0, this.scenery.displayWidth - 640) * progress;

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { save } from "../systems/SaveManager";
 import type { TeaSpec } from "../levels/levels";
 export class Collectible extends Phaser.GameObjects.Sprite {
   constructor(
@@ -12,6 +13,7 @@ export class Collectible extends Phaser.GameObjects.Sprite {
     this.setScale(height / this.height);
   }
   tick(now: number) {
+    if (save.data.settings.steadyView || save.data.settings.reducedMotion) { this.y = this.spec.y; this.setAngle(0); return; }
     this.y = this.spec.y + Math.sin(now / 280 + this.x) * 2;
     if (this.spec.golden) this.setAngle(Math.sin(now / 300) * 5);
   }

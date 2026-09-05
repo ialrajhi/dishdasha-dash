@@ -1,8 +1,8 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "checkedDate": "2026-09-05",
   "unitTests": 20,
-  "browserTests": 17,
+  "browserTests": 18,
   "browserTestsSkipped": 0,
   "androidPhone": {
     "testedAt": "2026-09-05T18:33:22.027Z",
@@ -43,7 +43,7 @@
     "steamInstallation": "Not tested"
   },
   "androidRelease": {
-    "versionCode": 3,
+    "versionCode": 4,
     "targetSdk": 36,
     "lintErrors": 0,
     "lintWarnings": 12,
@@ -55,19 +55,30 @@
   "engineVideoPolyfillExcluded": true,
   "noticeAssetCheckedInApkAndAab": true,
   "artifactSha256": [
-    "e3a1841536beb1b749798d2b33beb67b870eea7a5ac3909f28a804a52d0b0bbd  Dishdasha-Dash-1.2.0-Windows-x64.zip",
-    "e1db2285b38ea64cd3ae91117276fc689fb08204396a5b7df3912df7a03f14b0  Dishdasha-Dash-1.2.0-macOS-arm64.zip",
-    "6e2ae4e30afc400dbda2195cb70b2eacd689a21d5c75e9f965b276b21937c1f8  android/Dishdasha-Dash-1.2.0-test.apk",
-    "b3682a431cc2416d6366cfdfc7f0430c76d272be9c64a372cd799c1a42d981d1  android/Dishdasha-Dash-1.2.0-unsigned.aab"
+    "f3970139f6cdb9d7970b77cd5cba47a87eb49008afa7abfa4801cb969e56aaa2  Dishdasha-Dash-1.3.0-Windows-x64.zip",
+    "49506ef0e0cb1f753db99506850e1b0bb19a60aeb484fe25445c5ffc9537dde0  Dishdasha-Dash-1.3.0-macOS-arm64.zip",
+    "624101e00bcab92b9e6587a6ab7df5e776d69aa3aae0cf84f13a9b206eec5a47  android/Dishdasha-Dash-1.3.0-test.apk",
+    "03f058fa98871c80c51f81317ad3972ad90fe6a600049b9ae59623955b75b88f  android/Dishdasha-Dash-1.3.0-unsigned.aab"
   ],
   "animationRevision": {
-    "heroFrames": 4,
-    "boyFrames": 4,
+    "heroFrames": 12,
+    "boyFrames": 12,
     "distanceDriven": true,
     "menuSceneryStationary": true,
     "menuIdleGestures": true,
     "gameplayBrandingRemoved": true,
-    "browserRegressionPassed": true
+    "browserRegressionPassed": true,
+    "canvas": [
+      1920,
+      1080
+    ],
+    "heroTexture": [
+      384,
+      320
+    ],
+    "interpolatedPresentation": true,
+    "motionProfile": "MOTION_PROFILE.json",
+    "physicalDeviceRetested": false
   },
   "danceMode": {
     "characters": 12,

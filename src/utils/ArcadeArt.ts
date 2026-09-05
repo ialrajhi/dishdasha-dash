@@ -1,10 +1,12 @@
 import Phaser from "phaser";
+import runCycle from "./runCycle.json";
+export { default as runCycle } from "./runCycle.json";
 import frames from "./arcadeFrames.json";
 import sceneryLayout from "./sceneryLayout.json";
 import { LEVELS } from "../levels/levels";
 
 /** Source bounds are hand-reviewed: several poses cross their nominal grid cell. */
-export const HERO_SCALE = 0.52;
+export const HERO_SCALE = 0.26;
 export const floorY = sceneryLayout.floorY;
 export function preloadArcadeArt(scene: Phaser.Scene) {
   for (const level of LEVELS)
@@ -25,12 +27,12 @@ function crop(
   const width = right - left,
     height = bottom - top;
   const canvas = document.createElement("canvas");
-  canvas.width = hero ? 192 : width + 4;
-  canvas.height = hero ? 160 : height + 4;
+  canvas.width = hero ? 384 : width + 4;
+  canvas.height = hero ? 320 : height + 4;
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  const scale = hero ? 0.46 : 1;
+  const scale = hero ? 0.92 : 1;
   let source = scene.textures.get(sheet).getSourceImage() as
     | HTMLImageElement
     | HTMLCanvasElement;
@@ -142,11 +144,11 @@ export function prepareArcadeArt(scene: Phaser.Scene) {
     if (!name.startsWith("run")) crop(scene, "hero-sheet", `hero-${name}`, bounds, true);
   for (const actor of ["hero", "kid"]) {
     const source = scene.textures.get(`${actor}-run-sheet`).getSourceImage() as HTMLImageElement;
-    for (let frame = 0; frame < 4; frame++) {
+    for (let frame = 0; frame < runCycle.count; frame++) {
       const canvas = document.createElement("canvas");
-      canvas.width = 192;
-      canvas.height = 160;
-      canvas.getContext("2d")!.drawImage(source, frame * 192, 0, 192, 160, 0, 0, 192, 160);
+      canvas.width = runCycle.width;
+      canvas.height = runCycle.height;
+      canvas.getContext("2d")!.drawImage(source, frame % runCycle.columns * runCycle.width, Math.floor(frame / runCycle.columns) * runCycle.height, runCycle.width, runCycle.height, 0, 0, runCycle.width, runCycle.height);
       scene.textures.addCanvas(`${actor === "hero" ? "hero-run" : "arcade-kid"}-stride-${frame}`, canvas);
     }
   }
@@ -209,7 +211,7 @@ export function prepareArcadeArt(scene: Phaser.Scene) {
     scene.textures.remove(sheet);
 }
 export function heroFrame(state: string, time: number) {
-  if (state === "run") return `hero-run-stride-${Math.floor(time / 110) % 4}`;
+  if (state === "run") return `hero-run-stride-${Math.floor(time / 46) % runCycle.count}`;
   if (state === "idle" || state === "respawn")
     return Math.floor(time / 360) % 2 ? "hero-idleBreathe" : "hero-idle";
   if (state === "victory")

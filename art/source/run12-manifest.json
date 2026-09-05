@@ -1,0 +1,199 @@
+{
+  "tool": "built-in image_gen__imagegen",
+  "layout": {
+    "columns": 4,
+    "rows": 3,
+    "order": "row-major",
+    "cellWidth": 362,
+    "cellHeight": 362,
+    "cropConvention": "[left,top,rightExclusive,bottomExclusive]"
+  },
+  "requestedResolution": [
+    3072,
+    2304
+  ],
+  "actualResolution": [
+    1448,
+    1086
+  ],
+  "finalAssets": [
+    {
+      "asset": "hero",
+      "path": "art/source/hero-run12-sheet.png",
+      "size": [
+        1448,
+        1086
+      ],
+      "mode": "RGB",
+      "cropBoundsXYXYExclusive": [
+        [
+          53,
+          36,
+          322,
+          315
+        ],
+        [
+          454,
+          46,
+          674,
+          316
+        ],
+        [
+          786,
+          30,
+          994,
+          333
+        ],
+        [
+          1115,
+          37,
+          1374,
+          309
+        ],
+        [
+          74,
+          382,
+          326,
+          646
+        ],
+        [
+          445,
+          392,
+          661,
+          678
+        ],
+        [
+          764,
+          392,
+          1019,
+          675
+        ],
+        [
+          1139,
+          399,
+          1355,
+          668
+        ],
+        [
+          68,
+          726,
+          276,
+          1027
+        ],
+        [
+          400,
+          747,
+          666,
+          1015
+        ],
+        [
+          756,
+          730,
+          1039,
+          981
+        ],
+        [
+          1125,
+          748,
+          1390,
+          1025
+        ]
+      ]
+    },
+    {
+      "asset": "kid",
+      "path": "art/source/kid-run12-sheet.png",
+      "size": [
+        1448,
+        1086
+      ],
+      "mode": "RGB",
+      "cropBoundsXYXYExclusive": [
+        [
+          77,
+          29,
+          319,
+          333
+        ],
+        [
+          456,
+          55,
+          617,
+          329
+        ],
+        [
+          790,
+          24,
+          962,
+          329
+        ],
+        [
+          1126,
+          37,
+          1356,
+          329
+        ],
+        [
+          76,
+          387,
+          333,
+          654
+        ],
+        [
+          417,
+          410,
+          656,
+          681
+        ],
+        [
+          787,
+          403,
+          956,
+          682
+        ],
+        [
+          1147,
+          410,
+          1307,
+          682
+        ],
+        [
+          114,
+          733,
+          249,
+          1028
+        ],
+        [
+          438,
+          740,
+          656,
+          1020
+        ],
+        [
+          751,
+          737,
+          996,
+          1020
+        ],
+        [
+          1116,
+          745,
+          1337,
+          1030
+        ]
+      ]
+    }
+  ],
+  "prompts": {
+    "hero": "Use case: stylized-concept.\nAsset type: production game animation sprite atlas.\nGenerate a BRAND NEW twelve drawing smooth complete running cycle using attached reference only for character identity and rendering style. Exactly 12 full-body sprites in regular 4 columns by 3 rows, chronological order left-to-right top-to-bottom. Target resolution 3072x2304 pixels, each cell 768x768. Generous empty gutters, centered hip at same local cell X, steady ground at local y=690. Transparent background with genuine alpha; no fake checkerboard, no green, no floor, no cast shadow, no motion lines, no labels, no grid or numbers.\nPreserve charming detailed hand-drawn pixel-inspired arcade shading, bold crisp outlines, white cloth with soft pale-blue shading, warm tan skin, brown sandals. Locked side camera, identical head size and torso proportions; same character each drawing, constant slight forward lean. Keep torso height and scale consistent, only subtle natural vertical bob. All twelve frames must be truly distinct hand-drawn animation poses; never copy or rotate/warp entire earlier sprites. A full run cycle has contraction and recovery, NOT twelve wide-split poses. Ensure clearly different foot locations, knee bend and elbows in each frame; readable ankles and knee bend under the long robe.\nANIMATION SPEC using near leg = leg closest to viewer:\n1 near heel contacts ground in front, far leg trails behind.\n2 near leg bends/compresses with foot planted, far knee folding behind.\n3 near foot passes under hips planted, far knee swings forward.\n4 near leg extends back pushing off toes, far knee raised in front.\n5 both feet airborne, near knee folded behind and far lower leg extending ahead.\n6 near knee starts forward recovery, far heel about to land.\n7 far heel contacts front, near leg trails folded behind; arms opposite frame1.\n8 far knee compresses planted, near knee recovers underneath; arms opposite frame2.\n9 far foot planted under hips, near knee swinging ahead; arms opposite frame3.\n10 far leg extends behind in toe push-off, near knee raised front; arms opposite frame4.\n11 airborne far knee folds rear, near shin extends forward; arms opposite frame5.\n12 near heel almost contacts front with far foot leaving rear; smooth lead directly into frame1.\nArms counter-swing to legs in progressive moderate arcs, elbows generally bent; cloth folds and hem follow these precise different leg positions. No change of facing direction. Do not duplicate drawings, do not make every pose a huge stride.\nSubject: adult Kuwaiti man, facing RIGHT, exact same distinctive friendly black moustache, large expressive eye, long white dishdasha, white ghutra blowing gently behind towards LEFT, double black agal, brown sandals as Image1 reference. Keep full robe down toward ankles, with knee positions visible through folds. Reference is identity/style only; replace all four old poses with twelve newly drawn progressive poses.",
+    "kid": "Use case: stylized-concept.\nAsset type: production game animation sprite atlas.\nGenerate a BRAND NEW twelve drawing smooth complete running cycle using attached reference only for character identity and rendering style. Exactly 12 full-body sprites in regular 4 columns by 3 rows, chronological order left-to-right top-to-bottom. Target resolution 3072x2304 pixels, each cell 768x768. Generous empty gutters, centered hip at same local cell X, steady ground at local y=690. Transparent background with genuine alpha; no fake checkerboard, no green, no floor, no cast shadow, no motion lines, no labels, no grid or numbers.\nPreserve charming detailed hand-drawn pixel-inspired arcade shading, bold crisp outlines, white cloth with soft pale-blue shading, warm tan skin, brown sandals. Locked side camera, identical head size and torso proportions; same character each drawing, constant slight forward lean. Keep torso height and scale consistent, only subtle natural vertical bob. All twelve frames must be truly distinct hand-drawn animation poses; never copy or rotate/warp entire earlier sprites. A full run cycle has contraction and recovery, NOT twelve wide-split poses. Ensure clearly different foot locations, knee bend and elbows in each frame; readable ankles and knee bend under the long robe.\nANIMATION SPEC using near leg = leg closest to viewer:\n1 near heel contacts ground in front, far leg trails behind.\n2 near leg bends/compresses with foot planted, far knee folding behind.\n3 near foot passes under hips planted, far knee swings forward.\n4 near leg extends back pushing off toes, far knee raised in front.\n5 both feet airborne, near knee folded behind and far lower leg extending ahead.\n6 near knee starts forward recovery, far heel about to land.\n7 far heel contacts front, near leg trails folded behind; arms opposite frame1.\n8 far knee compresses planted, near knee recovers underneath; arms opposite frame2.\n9 far foot planted under hips, near knee swinging ahead; arms opposite frame3.\n10 far leg extends behind in toe push-off, near knee raised front; arms opposite frame4.\n11 airborne far knee folds rear, near shin extends forward; arms opposite frame5.\n12 near heel almost contacts front with far foot leaving rear; smooth lead directly into frame1.\nArms counter-swing to legs in progressive moderate arcs, elbows generally bent; cloth folds and hem follow these precise different leg positions. No change of facing direction. Do not duplicate drawings, do not make every pose a huge stride.\nSubject: smiling Kuwaiti boy, facing LEFT, exact same black hair, expressive large eye, white embroidered prayer cap with blue embroidery, long white dishdasha and brown sandals as Image1 reference. Keep full robe down toward ankles, with knee positions visible through folds. Reference is identity/style only; replace all four old poses with twelve newly drawn progressive poses."
+  },
+  "correctionPrompt": "Use case: precise-object-edit.\nCorrect this 4-by-3 twelve-frame game running animation sheet. Keep EXACTLY the same character identity, facing direction, head, outfit, outline style, consistent full-body size, and the 4-column/3-row layout. Make the animation leg choreography much more distinct and smooth. Replace the fake checkerboard with perfectly uniform solid chroma-key GREEN #00ff00 everywhere outside sprites, no gradients, no shadow, no grid. Do not put green inside sprites.\nThe critical fix is believable phase progression: row1 col1 extended contact, row1 col2 noticeably LOWER COMPRESSION with feet closer, row1 col3 tall PASSING POSE with stance shin nearly vertical DIRECTLY BELOW HIP and other heel tucked near buttocks behind, row1 col4 TOE-OFF stance leg slanted backward and other knee lifting ahead.\nRow2 col1 AIRBORNE with rear heel tucked high behind buttocks and front thigh projecting forward; row2 col2 front knee advances while ankle starts extending for landing. Row2 col3 OPPOSITE LEG CONTACT, row2 col4 OPPOSITE LOWER COMPRESSION with stance foot below the front knee.\nRow3 col1 OPPOSITE TALL PASSING, foot directly under hip, knees nearly adjacent, lifted heel behind. Row3 col2 OPPOSITE TOE-OFF with one leg behind and other knee lifting front. Row3 col3 OPPOSITE AIRBORNE RECOVERY with one heel tucked near buttocks. Row3 col4 reaches into first frame's front foot contact.\nFor the passing drawings row1 col3 and row3 col1 the silhouette must be NARROW, tall, with one brown sandal directly below the hip and other brown sandal lifted behind close to buttock: THESE ARE NOT SQUATTING/KNEELING poses and are NOT BOTH KNEES THRUST FORWARD. Distinct intermediate foot placements throughout. Alternate which arm appears front across half-cycles, visible side arm sweeps progressively backward while the other moves forward. Robe hem follows knees, retains long robe and bare ankles only.\nEvery drawing must show exactly TWO FEET on two naturally distinct legs. Camera and head size must stay locked. Hip centered in each same-size cell. No ground/shadow, no text. Please output high definition, target 3072x2304.",
+  "limitations": [
+    "RGB green backgrounds require chroma extraction; initial outputs had baked checkerboards.",
+    "12 distinct drawings including narrower passing and compression, but near/far leg depth swap does not precisely follow requested choreography.",
+    "Character head/hip drift requires per-frame anchor normalization before animation.",
+    "Resolution request not honored; original outputs are 1448x1086, ~200-300px tall sprites."
+  ],
+  "cropDetection": "Foreground excludes pixels with G>100 and G>1.35R and G>1.35B; crop bounds include outline, add 2px margin if desired."
+}

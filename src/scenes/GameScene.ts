@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { GROUND, DEV } from "../config/Constants";
+import { GROUND, DEV, RENDER_SCALE, CAMERA_PAD_X } from "../config/Constants";
 import {
   LEVELS,
   createCourse,
@@ -98,11 +98,12 @@ export class GameScene extends Phaser.Scene {
       .setDepth(8);
     this.populate();
     this.cameras.main
-      .setZoom(2)
+      .setZoom(RENDER_SCALE)
       .setBounds(0, 0, this.course.length + 260, 360)
       .startFollow(this.player, false, 0.15, 1, -110, 0)
       .setRoundPixels(false)
       .fadeIn(350);
+    this.cameras.main.stopFollow();
     this.input.keyboard?.on("keydown", this.keyDown, this);
     this.input.keyboard?.on("keyup", this.keyUp, this);
     this.input.on("pointerdown", this.pointerDown, this);
@@ -194,7 +195,7 @@ export class GameScene extends Phaser.Scene {
     this.hooks.hud(this.snapshot());
   }
   private burst(x: number, y: number, color: number, count = 8) {
-    if (save.data.settings.reducedMotion) return;
+    if (save.data.settings.reducedMotion || save.data.settings.steadyView) return;
     for (let i = 0; i < count; i++) {
       const p = this.add.image(x, y, "pixel").setTint(color).setDepth(25);
       this.tweens.add({
@@ -287,7 +288,7 @@ export class GameScene extends Phaser.Scene {
     this.player.invulnerableUntil = this.gameTime + 1400;
     this.player.hurtUntil = 0;
     this.player.lastGrounded = -1000;
-    this.cameras.main.scrollX = Math.max(0, this.checkpoint - 210) - 320;
+    this.cameras.main.scrollX = Math.max(0, this.checkpoint - 210) - CAMERA_PAD_X;
     this.cameras.main
       .startFollow(this.player, false, 0.15, 1, -110, 0)
       .fadeIn(350);
@@ -344,14 +345,23 @@ export class GameScene extends Phaser.Scene {
     const step = 1000 / 60;
     this.stepAccumulator += Math.min(delta, 250);
     while (this.stepAccumulator + 0.00001 >= step) {
+      this.player.capturePrevious();
+      this.hazards.forEach(h => h.capturePrevious());
       this.physics.world.update(this.gameTime, step);
       this.physics.world.postUpdate();
       this.tick(step);
       this.stepAccumulator -= step;
     }
-    this.world.update(this.gameTime);
-    this.player.animate(this.gameTime);
-    this.shadow.setPosition(this.player.x, GROUND + 1)
+    const alpha = Phaser.Math.Clamp(this.stepAccumulator / step, 0, 1);
+    this.player.present(alpha);
+    this.player.animate(this.gameTime, this.player.visual.x);
+    for (const hazard of this.hazards) hazard.present(alpha);
+    const camera = this.cameras.main;
+    camera.stopFollow();
+    const follow = 1 - Math.exp(-Math.min(delta, 250) / 100);
+    camera.scrollX = camera.clampX(Phaser.Math.Linear(camera.scrollX, this.player.visual.x + 110 - camera.width / 2, follow));
+    this.world.update(this.gameTime + this.stepAccumulator);
+    this.shadow.setPosition(this.player.visual.x, GROUND + 1)
       .setScale(Math.max(0.35, 1 - (GROUND - this.player.y) / 180));
   }
   private tick(delta: number) {
