@@ -2,7 +2,7 @@
 
 A complete, original Kuwait-themed browser arcade game built with **Phaser 3, TypeScript, Vite, and HTML/CSS**. Run from الفريج to العرس, collect steaming tea glasses, avoid angry dallahs, and find five golden dallahs.
 
-No backend, login, image downloads, or audio files are required. Original placeholder art is generated with Canvas; procedural sound and music use Web Audio. Arabic and English fonts are bundled locally.
+The arcade edition uses original illustrated Kuwait backgrounds and transparent sprite atlases, bundled in `public/assets/arcade/`. No third-party image service, backend, or audio download is needed at runtime. Sound and music use Web Audio; Arabic and English fonts are bundled locally. A loading screen protects the game until all art is ready and provides a retry if a download fails.
 
 ## Install and run
 
@@ -63,10 +63,11 @@ Saves belong to the current browser and site origin. A localhost save does not t
 ```text
 src/
   main.ts                     Phaser configuration, screen routing, lifecycle
-  style.css                   Cabinet, bilingual menus, responsive controls
+  style.css                   Base menus and responsive controls
+  arcade.css                  Illustrated edition, arcade wordmark and HUD
   config/Constants.ts         Resolution, scoring constants, development flags
   scenes/
-    BootScene.ts              Replacement asset loading and generated fallback art
+    BootScene.ts              Asset loading, progress, recovery, and atlas preparation
     MenuScene.ts              Animated title background
     GameScene.ts              Gameplay, health, checkpoints, progression
     WorldRenderer.ts          Parallax layers and environmental animation
@@ -83,45 +84,33 @@ src/
   ui/
     GameUI.ts                 All menu screens, HUD, touch controls
     icons.ts                  Reusable interface icons
-  utils/PixelArtGenerator.ts  Original art generation and asset override registry
+  utils/ArcadeArt.ts          Sprite extraction, pose normalization, looping street textures
+  utils/arcadeFrames.json     Reviewed source bounds and stage floor alignment
+  utils/PixelArtGenerator.ts  Original procedural art and collision-root texture
 tests/
   core.test.ts                Save corruption, persistence, scoring, level safety
   browser/                   Interaction and full-course browser tests
 ```
 
-The game renders at 640 × 360 with pixel-art filtering and responsive 16:9 scaling. Menus use semantic HTML over the canvas for Arabic shaping, RTL layout, keyboard focus, and touch interaction. Levels share the same scene and data-driven behavior.
+The game renders at **1280 × 720** with responsive 16:9 scaling. A centered 2× camera preserves the original **640 × 360 logical world**, course spacing, and jump physics. HTML menus provide Arabic shaping, RTL layout, keyboard focus, and touch interaction.
 
-## Replace character sprites
+## Arcade art and animation
 
-Put art in `public/assets/`. Add paths to `ASSET_OVERRIDES` in `src/utils/PixelArtGenerator.ts`:
+The five 1672 × 941 backgrounds share a visual direction but have independently reviewed floor coordinates. `ArcadeArt.ts` prepares overlapping image edges for continuous scrolling and extracts the foreground street. The scenery scrolls at 0.34 of camera speed; the street moves at full speed. Birds, dust motes, wind, sparks, pickup movement, landing dust and confetti add motion.
 
-```ts
-export const ASSET_OVERRIDES: Record<string, string> = {
-  "player-run-0": "/assets/player/run-0.png",
-  "player-run-1": "/assets/player/run-1.png",
-  "player-run-2": "/assets/player/run-2.png",
-  "player-run-3": "/assets/player/run-3.png",
-};
-```
+The 1254 × 1254 hero atlas includes eight running frames, two idle poses, jump, fall, hurt, death, and two celebration poses. Custom rectangles in `arcadeFrames.json` preserve frames that cross nominal grid boundaries. Each frame is normalized to a 192 × 160 canvas with a shared foot baseline. The visible sprite follows an invisible 36 × 48 physics root after physics updates. Its **19 × 39 collision body at offset (9, 9)** remains unchanged. Landing squash affects only the visual sprite.
 
-Character states are `idle`, `run`, `jump`, `fall`, `hurt`, `dead`, `victory`, `respawn`, each with frame indices 0–3. Current frames are **36 × 48**, with feet at the bottom and origin `(0.5, 1)`. The 19 × 39 collision body starts at offset `(9, 9)`; update `Player.ts` if your art changes size. You can duplicate a single frame for static states. Missing overrides automatically use generated artwork. For a sprite sheet, load it in BootScene and replace frame lookup in Player.animate.
+The main transparent prop atlas provides tea, both dallahs, cart, cat, crate, cone, football, melon, carpet, cooler, chair, gifts, tea tray, flowers and pigeon. An additional atlas supplies grocery bags, the boy, waiter, tire, goat and tent rope. Moving hazards sway, bounce or roll; collision bounds remain deliberately forgiving.
 
-## Replace environments and items
+To replace artwork:
 
-Use the same override registry. The generated key contract is:
+1. Replace the corresponding PNG under `public/assets/arcade/`.
+2. Update `arcadeFrames.json` bounds for the main hero/props sheets, or the extra-hazard bounds in `ArcadeArt.ts`. Bounds are `[left, top, rightExclusive, bottomExclusive]`.
+3. For backgrounds, update `floorY` to the painted curb edge. The renderer aligns it to world y=300.
+4. Adjust `propHeight` or `HERO_SCALE` for visual size, keeping collision geometry separate.
+5. Run the browser tests and inspect all five stage screenshots at desktop and phone sizes.
 
-| Key                           | Size       | Purpose                                               |
-| ----------------------------- | ---------- | ----------------------------------------------------- |
-| `sky-1` … `sky-5`             | 640 × 360  | Screen-space sky                                      |
-| `far-1` … `far-5`             | 1280 × 360 | Transparent distant skyline, 0.15 scroll factor       |
-| `mid-1` … `mid-5`             | 1280 × 360 | Transparent buildings and scenery, 0.55 scroll factor |
-| `ground-1` … `ground-5`       | 640 × 60   | Repeating ground strip at y=300                       |
-| `finish-1` … `finish-5`       | 120 × 120  | Finish arch, origin bottom-center                     |
-| `tea`                         | 18 × 24    | Tea pickup                                            |
-| `golden`                      | 40 × 40    | Golden dallah                                         |
-| `box`, `cart`, `dallah`, etc. | 44 × 44    | Obstacles; use names from `ObstacleKind`              |
-
-Keep pixel art integer-aligned and transparent where appropriate. Preserve obstacle silhouettes inside the forgiving hitboxes in `Obstacle.ts`, or update those bounds to match replacement art. The level-card thumbnails are generated from these same environment textures.
+Hero and prop artwork uses true transparency. The runtime removes almost transparent colored edge pixels. Menus and HUD portraits use the prepared frames, and stage thumbnails use the same original backgrounds. Asset downloads stay within the game’s own origin.
 
 ## Add music and sounds
 
@@ -158,7 +147,7 @@ Level Select is the developer level selector when all levels are unlocked. Set e
 ## Add Level 6
 
 1. Add a configuration to `LEVELS`, with id 6, speed, duration, colors, messages, and an obstacle list.
-2. Reuse an existing theme, or extend `Theme` and the environment painter with a new setting.
+2. Reuse an existing theme, or extend `Theme` and supply a background PNG plus its floor coordinate in `ArcadeArt.ts`.
 3. Replace the five-level limits in SaveManager, `main.ts`, development validation, and final-victory routing with `LEVELS.length`. Update HUD totals and menu route markers in GameUI, then add a `--level-art-6` CSS binding.
 4. Include the new stage in progression and full-course tests. Check gaps, pickup placement, checkpoint safety, and final-sprint behavior.
 
@@ -173,9 +162,9 @@ npx playwright test
 
 Start `npm run dev` before browser tests. By default the browser test config uses installed macOS Google Chrome. Set `CHROME_PATH` to a Chrome executable on another system. These tests use fresh browser contexts and do not modify your personal save data.
 
-The test suite covers tea, hearts, death, midpoint respawn, game over/retry, pause/resume, settings, language, touch, all five completion transitions, and persistent unlocks. A full-course test advances the actual Phaser loop at normal 60 Hz simulation steps with jump inputs and normal collision rules, traversing every meter of all five levels; it does not teleport the player or enable invincibility. Separate transition tests teleport only to exercise end screens quickly.
+The test suite covers cold loading, download failure/retry, HD rendering, all stage assets, stable physics geometry, tea, hearts, death, midpoint respawn, game over/retry, pause/resume, settings, language, touch, all five completion transitions, and persistent unlocks. A full-course test advances the actual Phaser loop at normal 60 Hz simulation steps with jump inputs and normal collision rules, traversing every meter of all five levels; it does not teleport the player or enable invincibility. Separate transition tests teleport only to exercise end screens quickly.
 
 ## Art and font credits
 
-Game artwork and synthesized audio are original project placeholders, with no third-party character art or business logos. Changa and Space Grotesk are bundled via Fontsource under the SIL Open Font License; their license files are included in the corresponding packages.
+Game artwork was generated for this project from the user’s supplied visual direction, then integrated as sprite atlases and scrolling scenes. It uses original Kuwaiti characters and settings; no Metal Slug characters or game assets are included. Synthesized audio is original. Changa and Space Grotesk are bundled via Fontsource under the SIL Open Font License; their license files are included in the corresponding packages.
 Phaser documentation: https://docs.phaser.io/phaser/concepts/physics/arcade

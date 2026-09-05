@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import "./style.css";
+import "./arcade.css";
 import { GameUI, type Screen } from "./ui/GameUI";
 import { MenuScene } from "./scenes/MenuScene";
 import { BootScene } from "./scenes/BootScene";
@@ -10,20 +11,21 @@ import { campaign } from "./systems/ScoreManager";
 import { DEV, WIDTH, HEIGHT } from "./config/Constants";
 let currentLevel = 1;
 let optionsReturn: Screen = "menu";
+let assetsReady = false;
 const ui = new GameUI(action);
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: "phaser-game",
-  width: WIDTH,
-  height: HEIGHT,
+  width: WIDTH * 2,
+  height: HEIGHT * 2,
   pixelArt: true,
   roundPixels: true,
   backgroundColor: "#529e9b",
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: WIDTH,
-    height: HEIGHT,
+    width: WIDTH * 2,
+    height: HEIGHT * 2,
   },
   physics: {
     default: "arcade",
@@ -35,9 +37,15 @@ const game = new Phaser.Game({
   render: { antialias: false },
   fps: { target: 60, forceSetTimeOut: false },
 });
-game.events.on("art-ready", (textures: Phaser.Textures.TextureManager) =>
-  ui.artwork(textures),
-);
+game.events.on("assets-ready", () => {
+  assetsReady = true;
+});
+game.events.on("asset-progress", (progress: number) => ui.loading(progress));
+game.events.on("asset-error", () => ui.loadingError());
+game.events.on("art-ready", (textures: Phaser.Textures.TextureManager) => {
+  ui.artwork(textures);
+  ui.loaded();
+});
 const scene = () => game.scene.getScene("Game") as GameScene;
 const hooks: GameHooks = {
   hud: (s) => ui.hud(s),
@@ -55,6 +63,7 @@ const hooks: GameHooks = {
   },
 };
 function start(level = 1, reset = true) {
+  if (!assetsReady) return;
   currentLevel = level;
   if (reset) campaign.reset();
   else campaign.results.delete(level);
@@ -66,6 +75,7 @@ function start(level = 1, reset = true) {
   game.scene.start("Game", { level, hooks });
 }
 function menu(screen: Screen = "menu") {
+  if (!assetsReady) return;
   game.scene.stop("Game");
   if (!game.scene.isActive("Menu")) game.scene.start("Menu");
   audio.pause(false);
@@ -115,6 +125,11 @@ async function fullscreen() {
   }
 }
 function action(name: string, value?: string) {
+  if (name === "reload") {
+    location.reload();
+    return;
+  }
+  if (!assetsReady) return;
   if (!["jump-down", "jump-up", "volume"].includes(name)) {
     audio.unlock();
     audio.play("select");

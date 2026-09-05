@@ -5,9 +5,11 @@ export class Collectible extends Phaser.GameObjects.Sprite {
     scene: Phaser.Scene,
     public spec: TeaSpec,
   ) {
-    super(scene, spec.x, spec.y, spec.golden ? "golden" : "tea");
+    super(scene, spec.x, spec.y, spec.golden ? "arcade-golden" : "arcade-tea");
     scene.add.existing(this);
     this.setDepth(16);
+    const height = spec.golden ? 43 : 27;
+    this.setScale(height / this.height);
   }
   tick(now: number) {
     this.y = this.spec.y + Math.sin(now / 280 + this.x) * 2;

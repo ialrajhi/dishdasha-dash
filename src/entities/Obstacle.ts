@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { GROUND } from "../config/Constants";
 import type { HazardSpec } from "../levels/levels";
+import { propHeight, propTexture } from "../utils/ArcadeArt";
 const sizes: Record<string, [number, number]> = {
   cone: [16, 26],
   cat: [28, 23],
@@ -21,12 +22,20 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
   hit = false;
   motionStart?: number;
   private originalX: number;
+  private artScale = 1;
   constructor(scene: Phaser.Scene, spec: HazardSpec) {
     super(scene, spec.x, GROUND, spec.kind);
     this.spec = spec;
     this.originalX = spec.x;
     scene.add.existing(this);
     this.setOrigin(0.5, 1).setDepth(18);
+    if (spec.kind === "waiter") this.setFlipX(true);
+    const key = propTexture(spec.kind);
+    if (scene.textures.exists(key)) {
+      this.setTexture(key);
+      this.artScale = (propHeight[spec.kind] ?? 36) / this.height;
+      this.setScale(this.artScale);
+    }
   }
   tick(now: number, playerX: number, level: number) {
     if (
@@ -45,6 +54,14 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       this.x = this.originalX - ((now - this.motionStart) / 1000) * speed;
       if (["dallah", "kid", "waiter", "goat"].includes(this.spec.kind))
         this.y = GROUND - Math.abs(Math.sin(now / 85)) * 2;
+      if (["dallah", "cat", "goat", "pigeon"].includes(this.spec.kind)) {
+        this.setAngle(Math.sin(now / 100) * 4);
+        this.setScale(
+          this.artScale * (1 + Math.sin(now / 100) * 0.025),
+          this.artScale * (1 - Math.sin(now / 100) * 0.025),
+        );
+      }
+      if (this.spec.kind === "ball") this.angle -= 1.5;
     }
     if (
       this.spec.kind === "bag" &&

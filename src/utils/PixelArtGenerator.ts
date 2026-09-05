@@ -2,6 +2,15 @@ import Phaser from "phaser";
 import { LEVELS, type LevelConfig, type ObstacleKind } from "../levels/levels";
 type C = CanvasRenderingContext2D;
 export const ASSET_OVERRIDES: Record<string, string> = {};
+/** Only these two small textures are needed by the illustrated edition. */
+export function generateCoreArt(scene: Phaser.Scene) {
+  canvas(scene, "player-run-0", 36, 48, (c) => {
+    c.fillStyle = "#fff"; c.fillRect(0, 0, 36, 48);
+  });
+  canvas(scene, "pixel", 3, 3, (c) => {
+    c.fillStyle = "#fff"; c.fillRect(0, 0, 3, 3);
+  });
+}
 const r = (c: C, x: number, y: number, w: number, h: number, color: string) => {
   c.fillStyle = color;
   c.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));

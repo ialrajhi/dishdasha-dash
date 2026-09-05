@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { WIDTH, GROUND, DEV } from "../config/Constants";
+import { GROUND, DEV } from "../config/Constants";
 import {
   LEVELS,
   createCourse,
@@ -18,7 +18,6 @@ import {
 import { save } from "../systems/SaveManager";
 import { audio } from "../systems/AudioManager";
 import { t, bilingual } from "../systems/LocalizationManager";
-import { generateArt } from "../utils/PixelArtGenerator";
 export interface Snapshot {
   level: number;
   score: number;
@@ -73,7 +72,6 @@ export class GameScene extends Phaser.Scene {
     this.finalNotice = false;
   }
   create() {
-    generateArt(this);
     this.world = new WorldRenderer(this, this.level, this.course);
     const ground = this.physics.add.staticGroup();
     let start = 0;
@@ -95,6 +93,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(8);
     this.populate();
     this.cameras.main
+      .setZoom(2)
       .setBounds(0, 0, this.course.length + 260, 360)
       .startFollow(this.player, true, 0.15, 1, -110, 0)
       .setRoundPixels(true)
@@ -142,7 +141,7 @@ export class GameScene extends Phaser.Scene {
       this.releaseJump();
   }
   private pointerDown(pointer: Phaser.Input.Pointer) {
-    if (pointer.x > WIDTH * 0.38) this.pressJump();
+    if (pointer.x > this.cameras.main.width * 0.38) this.pressJump();
   }
   private pointerUp() {
     this.releaseJump();
@@ -229,8 +228,8 @@ export class GameScene extends Phaser.Scene {
     this.player.invulnerableUntil = this.gameTime + 1200;
     this.player.hurtUntil = this.gameTime + 220;
     this.player.setVelocityX(-55);
-    this.player.setTint(0xff9b82);
-    this.time.delayedCall(140, () => this.player.clearTint());
+    this.player.visual.setTint(0xff9b82);
+    this.time.delayedCall(140, () => this.player.visual.clearTint());
     this.cameras.main.shake(140, 0.004);
     this.burst(this.player.x, this.player.y - 20, 0xf1a080);
     audio.play("damage");
@@ -269,12 +268,13 @@ export class GameScene extends Phaser.Scene {
     this.player.bodyRef.reset(this.checkpoint, GROUND);
     this.player.setVelocity(0, 0);
     this.player.state = "respawn";
+    this.player.resetVisual();
     this.player.held = false;
     this.player.bufferedAt = -1000;
     this.player.invulnerableUntil = this.gameTime + 1400;
     this.player.hurtUntil = 0;
     this.player.lastGrounded = -1000;
-    this.cameras.main.scrollX = Math.max(0, this.checkpoint - 210);
+    this.cameras.main.scrollX = Math.max(0, this.checkpoint - 210) - 320;
     this.cameras.main
       .startFollow(this.player, true, 0.15, 1, -110, 0)
       .fadeIn(350);
@@ -340,13 +340,7 @@ export class GameScene extends Phaser.Scene {
       if (!this.player.wasGrounded) {
         this.burst(this.player.x, this.player.y - 2, 0xf0d6a4, 6);
         audio.play("land");
-        this.tweens.add({
-          targets: this.player,
-          scaleY: 0.91,
-          scaleX: 1.06,
-          duration: 70,
-          yoyo: true,
-        });
+        this.player.land();
       }
     }
     if (

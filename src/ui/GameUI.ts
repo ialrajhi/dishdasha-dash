@@ -31,7 +31,7 @@ export class GameUI {
   private displayedScore = 0;
   constructor(private action: (action: string, value?: string) => void) {
     document.querySelector("#app")!.innerHTML =
-      `<div class="arcade-shell"><header class="shell-header"><a class="wordmark" href="#" data-action="menu"><span class="brand-square">د</span><span>دشداشة <b>DASH</b></span></a><div class="header-caption"><span class="live-dot"></span> MADE IN THE KUWAIT STATE OF MIND</div><nav class="header-controls"><button data-action="language" class="language-button" aria-label="Change language"></button><span class="divider"></span><button data-action="mute" aria-label="Toggle audio">${icon("sound")}</button><button data-action="fullscreen" aria-label="Fullscreen">${icon("fullscreen")}</button></nav></header><section class="game-cabinet" aria-label="دشداشة Dash"><div id="phaser-game"></div><div class="screen-texture" aria-hidden="true"></div><div id="ui-layer"></div><div id="game-notice" role="status" aria-live="polite"></div><div class="portrait-message"><span>لف التلفون 📱↔️</span><small>Landscape feels better</small><button data-action="portrait">كمل جذي</button></div><div class="cabinet-corner tl"></div><div class="cabinet-corner tr"></div><div class="cabinet-corner bl"></div><div class="cabinet-corner br"></div></section><footer class="shell-footer"><div class="control-guide"><kbd>SPACE</kbd><span id="control-copy"></span><span class="footer-dot">·</span><kbd>ESC</kbd><span id="pause-copy"></span></div><div class="footer-signature"><span class="kuwait-flag"></span><span>صنع بحب، ونص استكانة چاي</span></div><div class="version">ARCADE / 01</div></footer></div>`;
+      `<div class="arcade-shell"><header class="shell-header"><a class="wordmark" href="#" data-action="menu"><span class="brand-square">د</span><span>دشداشة <b>DASH</b></span></a><div class="header-caption"><span class="live-dot"></span> SMALL DISHDASHA. BIG ADVENTURE.</div><nav class="header-controls"><button data-action="language" class="language-button" aria-label="Change language"></button><span class="divider"></span><button data-action="mute" aria-label="Toggle audio">${icon("sound")}</button><button data-action="fullscreen" aria-label="Fullscreen">${icon("fullscreen")}</button></nav></header><section class="game-cabinet" aria-label="دشداشة Dash"><div id="phaser-game"></div><div class="screen-texture" aria-hidden="true"></div><div id="ui-layer" inert></div><div class="asset-loading" role="status"><span class="loading-title">دشداشة <b>DASH</b></span><strong>نجهز الفريج…</strong><small>GETTING THE NEIGHBORHOOD READY</small><div class="loading-track"><i id="asset-progress"></i></div><span id="loading-percent">0%</span></div><div id="game-notice" role="status" aria-live="polite"></div><div class="portrait-message"><span>لف التلفون 📱↔️</span><small>Landscape feels better</small><button data-action="portrait">كمل جذي</button></div><div class="cabinet-corner tl"></div><div class="cabinet-corner tr"></div><div class="cabinet-corner bl"></div><div class="cabinet-corner br"></div></section><footer class="shell-footer"><div class="control-guide"><kbd>SPACE</kbd><span id="control-copy"></span><span class="footer-dot">·</span><kbd>ESC</kbd><span id="pause-copy"></span></div><div class="footer-signature"><span class="kuwait-flag"></span><span>صنع بحب، ونص استكانة چاي</span></div><div class="version">ARCADE EDITION</div></footer></div>`;
     this.layer = document.querySelector("#ui-layer")!;
     this.noticeEl = document.querySelector("#game-notice")!;
     document.addEventListener("click", (e) => {
@@ -66,6 +66,21 @@ export class GameUI {
     });
     this.chrome();
   }
+  loading(progress: number) {
+    const bar = document.querySelector<HTMLElement>("#asset-progress");
+    if (bar) bar.style.width = `${progress * 100}%`;
+    const label = document.querySelector("#loading-percent");
+    if (label) label.textContent = `${Math.round(progress * 100)}%`;
+  }
+  loaded() {
+    this.layer.removeAttribute("inert");
+    document.querySelector(".asset-loading")?.remove();
+  }
+  loadingError() {
+    const panel = document.querySelector(".asset-loading");
+    if (panel)
+      panel.innerHTML = `<strong>ما اكتمل التحميل</strong><small>Check your connection and try again.</small><button class="small-button" data-action="reload">حاول مرة ثانية · Retry</button>`;
+  }
   chrome() {
     const ar = save.data.settings.language === "ar";
     document.documentElement.lang = ar ? "ar" : "en";
@@ -86,79 +101,30 @@ export class GameUI {
   }
   artwork(textures: import("phaser").Textures.TextureManager) {
     for (const level of LEVELS) {
-      const canvas = document.createElement("canvas");
-      canvas.width = 160;
-      canvas.height = 150;
-      const c = canvas.getContext("2d")!;
-      c.imageSmoothingEnabled = false;
-      c.drawImage(
-        textures.get(`sky-${level.id}`).getSourceImage() as HTMLCanvasElement,
-        0,
-        0,
-        640,
-        360,
-        0,
-        0,
-        160,
-        150,
-      );
-      c.drawImage(
-        textures.get(`far-${level.id}`).getSourceImage() as HTMLCanvasElement,
-        340,
-        75,
-        320,
-        240,
-        0,
-        0,
-        160,
-        150,
-      );
-      c.drawImage(
-        textures.get(`mid-${level.id}`).getSourceImage() as HTMLCanvasElement,
-        0,
-        40,
-        320,
-        265,
-        0,
-        0,
-        160,
-        150,
-      );
-      c.drawImage(
-        textures
-          .get(`ground-${level.id}`)
-          .getSourceImage() as HTMLCanvasElement,
-        0,
-        0,
-        320,
-        20,
-        0,
-        141,
-        160,
-        9,
-      );
       document.documentElement.style.setProperty(
         `--level-art-${level.id}`,
-        `url("${canvas.toDataURL()}")`,
+        `url("/assets/arcade/${level.theme}.png")`,
       );
     }
-    const runner = document.createElement("canvas");
-    runner.width = 36;
-    runner.height = 48;
-    runner
-      .getContext("2d")!
-      .drawImage(
-        textures.get("player-idle-0").getSourceImage() as HTMLCanvasElement,
-        0,
-        0,
-        36,
-        48,
-      );
+    const source = textures
+      .get("hero-idle")
+      .getSourceImage() as HTMLCanvasElement;
     document.documentElement.style.setProperty(
       "--runner-icon",
-      `url("${runner.toDataURL()}")`,
+      `url("${source.toDataURL()}")`,
+    );
+    const portrait = document.createElement("canvas");
+    portrait.width = 100;
+    portrait.height = 100;
+    portrait
+      .getContext("2d")!
+      .drawImage(source, 61, 24, 78, 72, 0, 0, 100, 100);
+    document.documentElement.style.setProperty(
+      "--hero-portrait",
+      `url("${portrait.toDataURL()}")`,
     );
   }
+
   show(
     screen: Screen,
     data?: { result?: LevelResult; state?: Snapshot; deaths?: number },
@@ -198,7 +164,7 @@ export class GameUI {
     return `<div class="panel-heading"><button class="back-button" data-action="back" aria-label="${t("back")}">${icon("back")}</button><div><h1>${title}</h1><p>${subtitle}</p></div><span class="small-mark">د / D</span></div>`;
   }
   private menu() {
-    return `<div class="main-menu"><div class="menu-copy"><div class="eyebrow"><span></span> ${bilingual("مغامرة كويتية على السريع", "A LITTLE KUWAITI ADVENTURE")}</div><h1 class="game-title"><span lang="ar">دشداشة</span><strong>DASH<span class="title-spark">✦</span></strong></h1><p class="menu-tagline">${t("travel")} <span>✦</span></p><div class="menu-buttons">${button("start", "start", "play", true)}${button("select", "levels", "map")}<div class="menu-secondary"><button data-action="options">${icon("settings")}${t("options")}</button><button data-action="how">${icon("help")}${t("how")}</button></div></div><button class="high-score-link" data-action="high">${icon("trophy")}<span>${t("high")}</span><strong>${number(save.data.best).padStart(6, "0")}</strong></button></div><div class="menu-stamp"><span class="stamp-star">✦</span><span>يلا!<small>شد حيلك</small></span></div><div class="level-route"><span class="route-active">01</span><i></i><span>02</span><i></i><span>03</span><i></i><span>04</span><i></i><span>05</span><small>${t("campaign")}</small></div><span class="menu-coordinate">29.3759° N &nbsp; 47.9774° E</span></div>`;
+    return `<div class="main-menu"><div class="menu-copy"><div class="eyebrow"><span></span> ${bilingual("مغامرة كويتية على السريع", "A LITTLE KUWAITI ADVENTURE")}</div><h1 class="game-title"><span lang="ar">دشداشة</span><strong>DASH<span class="title-spark">✦</span></strong></h1><p class="menu-tagline">${t("travel")} <span>✦</span></p><div class="menu-buttons">${button("start", "start", "play", true)}${button("select", "levels", "map")}<div class="menu-secondary"><button data-action="options">${icon("settings")}${t("options")}</button><button data-action="how">${icon("help")}${t("how")}</button></div></div><button class="high-score-link" data-action="high">${icon("trophy")}<span>${t("high")}</span><strong>${number(save.data.best).padStart(6, "0")}</strong></button></div><div class="menu-stamp"><span class="stamp-star">✦</span><span>يلا!<small>شد حيلك</small></span></div><div class="level-route"><span class="route-active">01</span><i></i><span>02</span><i></i><span>03</span><i></i><span>04</span><i></i><span>05</span><small>${t("campaign")}</small></div><span class="menu-coordinate"><span class="kuwait-flag"></span> KUWAIT · ALWAYS A GOOD STAGE</span></div>`;
   }
   private levels() {
     return `<div class="full-panel">${this.heading(t("select"), t("travel"))}<div class="level-cards">${LEVELS.map(
@@ -229,7 +195,7 @@ export class GameUI {
     return `<div class="modal-wrap"><div class="modal high-modal">${this.heading(t("high"), bilingual("أبطال الدشداشة", "Dishdasha hall of fame"))}<div class="big-trophy">${icon("trophy")}</div><strong class="record-number">${number(save.data.best)}</strong><p class="record-label">${t("best")}</p><div class="record-list">${LEVELS.map((l) => `<div><span><i>0${l.id}</i>${save.data.settings.language === "ar" ? l.ar : l.en}</span><b>${number(save.data.levels[l.id]?.score ?? 0)}</b><span class="tea-color">${save.data.levels[l.id]?.golden ? "★" : "☆"}</span></div>`).join("")}</div>${button("start", "start", "play", true)}</div></div>`;
   }
   private playing() {
-    return `<div class="hud"><div class="hud-brand"><b>دشداشة <span>DASH</span></b><div class="health-line"><div id="hearts"></div><span class="lives-icon">♟</span><span id="lives">× 3</span></div></div><div class="hud-score"><small>${t("score")}</small><strong id="score">000000</strong></div><div class="hud-right"><div class="tea-counter">${icon("tea")}<strong id="tea">0 / 0</strong><span id="golden">☆</span></div><div class="hud-level" id="level-label"></div></div><button class="pause-button" data-action="pause" aria-label="${t("pause")}">${icon("pause")}</button><div class="progress-track"><div id="level-progress"></div></div></div><div class="game-bottom"><span id="level-tip">${t("touch")}</span><button id="jump-button" aria-label="${t("jump")}">${icon("jump")}<span>${t("jump")}</span></button></div>`;
+    return `<div class="hud"><div class="hud-brand"><b lang="ar">دشداشة<span>DASH</span></b><span class="kuwait-flag"></span></div><div class="hud-health"><div id="hearts"></div><div class="health-line"><span class="lives-icon" aria-hidden="true"></span><span id="lives">× 3</span><div class="tea-counter"><span class="tea-art" aria-hidden="true"></span><strong id="tea">0 / 0</strong><span id="golden">☆</span></div></div></div><div class="hud-score"><small>${t("score")}</small><strong id="score">0000000</strong></div><div class="hud-right"><div class="hud-level" id="level-label"></div><small class="stage-motto">KUWAIT · ALWAYS A GOOD STAGE</small></div><button class="pause-button" data-action="pause" aria-label="${t("pause")}">${icon("pause")}</button><div class="progress-track"><div id="level-progress"></div></div></div><div class="game-bottom"><span id="level-tip">${t("touch")}</span><button id="jump-button" aria-label="${t("jump")}">${icon("jump")}<span>${t("jump")}</span></button></div>`;
   }
   hud(state: Snapshot) {
     this.lastState = state;
@@ -243,7 +209,7 @@ export class GameUI {
       this.displayedScore,
     )
       .toString()
-      .padStart(6, "0");
+      .padStart(7, "0");
     document.querySelector("#hearts")!.innerHTML = [0, 1, 2]
       .map(
         (i) =>
@@ -256,7 +222,7 @@ export class GameUI {
     document.querySelector("#golden")!.textContent = state.golden ? "★" : "☆";
     const l = LEVELS[state.level - 1];
     document.querySelector("#level-label")!.textContent =
-      `0${state.level} / 05 · ${save.data.settings.language === "ar" ? l.ar : l.en}`;
+      `${save.data.settings.language === "ar" ? "المرحلة" : "LEVEL"} ${state.level} · ${save.data.settings.language === "ar" ? l.ar : l.en}`;
     (document.querySelector("#level-progress") as HTMLElement).style.width =
       `${state.progress * 100}%`;
   }

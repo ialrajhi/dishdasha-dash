@@ -1,31 +1,38 @@
 import Phaser from "phaser";
-import { generateArt } from "../utils/PixelArtGenerator";
 import { LEVELS } from "../levels/levels";
 import { WorldRenderer } from "./WorldRenderer";
+import { heroFrame } from "../utils/ArcadeArt";
 export class MenuScene extends Phaser.Scene {
   private world!: WorldRenderer;
   private runner!: Phaser.GameObjects.Sprite;
   private shadow!: Phaser.GameObjects.Ellipse;
+  private tea: Phaser.GameObjects.Image[] = [];
   constructor() {
     super("Menu");
   }
   create() {
-    generateArt(this);
+    this.cameras.main.setZoom(2).centerOn(320, 180).fadeIn(300);
     this.world = new WorldRenderer(this, LEVELS[0]);
-    this.cameras.main.fadeIn(300);
-    this.shadow = this.add.ellipse(440, 299, 25, 5, 0x534c38, 0.3).setDepth(5);
+    this.shadow = this.add.ellipse(434, 300, 55, 8, 0x26212a, 0.28).setDepth(5);
     this.runner = this.add
-      .sprite(440, 300, "player-run-0")
+      .sprite(434, 301, "hero-run1")
       .setOrigin(0.5, 1)
+      .setScale(0.77)
       .setDepth(10);
-    this.add.image(560, 269, "tea").setScale(1.1);
-    this.add.image(610, 259, "tea").setScale(1.1);
+    this.tea = [0, 1, 2].map((i) =>
+      this.add
+        .image(510 + i * 52, 244 - i * 10, "arcade-tea")
+        .setDisplaySize(19, 28),
+    );
     this.game.events.emit("art-ready", this.textures);
   }
   update(time: number) {
-    this.world.update(time, 190 + time * 0.005);
-    const x = 400 + ((time / 30) % 310);
-    this.runner.setX(x).setTexture(`player-run-${Math.floor(time / 100) % 4}`);
-    this.shadow.setX(x);
+    this.world.update(time, time * 0.036);
+    this.runner.setTexture(heroFrame("run", time));
+    this.runner.y = 301 - Math.abs(Math.sin(time / 160)) * 1.1;
+    this.shadow.setScale(1 + Math.sin(time / 160) * 0.04, 1);
+    this.tea.forEach(
+      (tea, i) => (tea.y = 244 - i * 10 + Math.sin(time / 400 + i) * 3),
+    );
   }
 }

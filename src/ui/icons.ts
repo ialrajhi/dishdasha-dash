@@ -15,7 +15,7 @@ export const icon = (name: string) => {
     back: '<path d="M19 12H5m6-6-6 6 6 6"/>',
     pause: '<path d="M8 4v16M16 4v16" stroke-width="5"/>',
     heart:
-      '<path d="M12 20 3 11V6l4-3 5 4 5-4 4 3v5z" fill="currentColor" stroke="none"/>',
+      '<path d="M12 20 3 11V6l4-3 5 4 5-4 4 3v5z" fill="currentColor" stroke="none"/><path d="M5 6h3v2H5z" fill="#fff4ec" stroke="none"/>',
     tea: '<path d="M5 8h13l-2 13H7zM8 3v2m5-3v3m5-2v2M3 22h17"/>',
     star: '<path d="m12 2 3 7 7 1-5 5 1 7-6-4-6 4 1-7-5-5 7-1z"/>',
     lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/>',
