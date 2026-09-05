@@ -1,6 +1,6 @@
 # Artwork and content inventory
 
-Reviewed 5 September 2026 for Dishdasha Dash 1.1.1.
+Reviewed 5 September 2026 for Dishdasha Dash 1.2.0.
 
 The game uses original AI-generated raster artwork made for this project from the user's Kuwaiti arcade visual direction. Reference photographs guided landmark shapes; the reference photographs themselves are not distributed. No Metal Slug sprites, characters, music, code, branding, or other game files are included. Metal Slug was a stylistic reference supplied by the user.
 
@@ -13,9 +13,10 @@ The game uses original AI-generated raster artwork made for this project from th
 | Wedding panorama | Generated for this project; ambiguous generated calligraphic text removed; ornamental patterns retained. |
 | Hero, prop, and extra sprite atlases | Generated for this project; transparent backgrounds and reviewed extraction bounds. Idle, jump, fall, hurt, death, and celebration states. Superseded run poses are retained only in editable source. |
 | Hero and boy running strips | Generated for this project using built-in ImageGen. Four alternating contact/passing poses per character. RGB green source retained; reproducible chroma extraction, shared scaling and foot baseline alignment in `scripts/prepare-run-art.mjs`. Exact prompts retained in `art/source/run-cycle-prompts.json`. |
+| Go Dance cast | Twelve original characters, three painted dance poses each. Built-in ImageGen; green source atlases and prompts retained in `art/source/dance-*`; reproducible extraction in `scripts/prepare-dance-art.mjs`. No characters or assets taken from DDDance Party or another video game. |
 | Application icon | Generated for this project; friendly original hero with ghutra and agal on navy, no text. Technical icon conversions supply Android, macOS, and Windows formats. |
 | Interface and world text | Authored/edited for this game, reviewed for language roles. English menus by default; Arabic HUD, dialogue and shop signs. AI-assisted text should be covered accurately in Steam's Content Survey. |
-| Audio | Synthesized in TypeScript/Web Audio. No sampled commercial recordings or runtime AI generation. |
+| Audio | Synthesized in TypeScript/Web Audio. Go Dance adds six original looping arrangements with distinct tempos, melodies, bass, percussion and timbres. No sampled commercial recordings or runtime AI generation. |
 
 Arabic signs are rendered from controlled strings: بقالة بو خالد، الجمعية التعاونية، بهارات وتمور، أقمشة كويتية، المباركية. The Kuwait flag uses the green/white/red bands and black hoist trapezoid. Named landmarks are cultural setting details; the game does not claim an official affiliation or endorsement.
 

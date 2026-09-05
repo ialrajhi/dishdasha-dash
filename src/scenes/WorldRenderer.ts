@@ -103,12 +103,12 @@ export class WorldRenderer {
   update(now: number, offset?: number) {
     const x = offset ?? this.scene.cameras.main.scrollX + 320;
     // A unique landmark panorama: never duplicate, mirror, or blend the towers.
-    const progress = this.courseLength ? Phaser.Math.Clamp(x / this.courseLength, 0, 1) : (1 - Math.cos(now / 24000)) / 2;
+    const progress = save.data.settings.steadyView ? .25 : this.courseLength ? Phaser.Math.Clamp(x / this.courseLength, 0, 1) : (1 - Math.cos(now / 24000)) / 2;
     this.scenery.x = -Math.max(0, this.scenery.displayWidth - 640) * progress;
     this.street.tilePositionX = x / this.artScale;
     const g = this.atmosphere;
     g.clear();
-    if (save.data.settings.reducedMotion) return;
+    if (save.data.settings.reducedMotion || save.data.settings.steadyView) return;
     if (this.level.id < 3) {
       g.lineStyle(0.9, 0x354c62, 0.65);
       for (let i = 0; i < 5; i++) {

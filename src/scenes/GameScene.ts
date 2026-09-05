@@ -100,8 +100,8 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main
       .setZoom(2)
       .setBounds(0, 0, this.course.length + 260, 360)
-      .startFollow(this.player, true, 0.15, 1, -110, 0)
-      .setRoundPixels(true)
+      .startFollow(this.player, false, 0.15, 1, -110, 0)
+      .setRoundPixels(false)
       .fadeIn(350);
     this.input.keyboard?.on("keydown", this.keyDown, this);
     this.input.keyboard?.on("keyup", this.keyUp, this);
@@ -242,7 +242,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setVelocityX(-55);
     this.player.visual.setTint(0xff9b82);
     this.time.delayedCall(140, () => this.player.visual.clearTint());
-    if (!save.data.settings.reducedMotion) this.cameras.main.shake(140, 0.004);
+    if (!save.data.settings.reducedMotion && !save.data.settings.steadyView) this.cameras.main.shake(140, 0.004);
     this.burst(this.player.x, this.player.y - 20, 0xf1a080);
     audio.play("damage");
     this.publish();
@@ -289,7 +289,7 @@ export class GameScene extends Phaser.Scene {
     this.player.lastGrounded = -1000;
     this.cameras.main.scrollX = Math.max(0, this.checkpoint - 210) - 320;
     this.cameras.main
-      .startFollow(this.player, true, 0.15, 1, -110, 0)
+      .startFollow(this.player, false, 0.15, 1, -110, 0)
       .fadeIn(350);
     this.publish();
   }

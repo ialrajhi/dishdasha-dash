@@ -1,3 +1,4 @@
+import { emptyParty, readParty, type Party } from "../dance/DanceData";
 import { SAVE_KEY } from "../config/Constants";
 export type Language = "ar" | "en";
 export interface Settings {
@@ -6,6 +7,7 @@ export interface Settings {
   volume: number;
   language: Language;
   reducedMotion: boolean;
+  steadyView: boolean;
 }
 export interface LevelRecord {
   score: number;
@@ -19,6 +21,7 @@ export interface SaveData {
   best: number;
   levels: Record<number, LevelRecord>;
   settings: Settings;
+  party: Party;
 }
 const defaults = (): SaveData => ({
   version: 2,
@@ -26,7 +29,8 @@ const defaults = (): SaveData => ({
   unlocked: 1,
   best: 0,
   levels: {},
-  settings: { music: true, sfx: true, volume: 55, language: "en", reducedMotion: typeof matchMedia !== "undefined" && matchMedia('(prefers-reduced-motion: reduce)').matches },
+  party: emptyParty(),
+  settings: { steadyView: true, music: true, sfx: true, volume: 55, language: "en", reducedMotion: typeof matchMedia !== "undefined" && matchMedia('(prefers-reduced-motion: reduce)').matches },
 });
 const safeNumber = (value: unknown, fallback = 0) =>
   typeof value === "number" && Number.isFinite(value) && value >= 0
@@ -67,8 +71,10 @@ export class SaveManager {
             golden: r.golden === true,
           };
       }
+      this.data.party = readParty(raw.party);
       const s = raw.settings ?? {};
       this.data.settings = {
+        steadyView: s.steadyView !== false,
         music: s.music !== false,
         sfx: s.sfx !== false,
         volume: Math.min(100, safeNumber(s.volume, 55)),

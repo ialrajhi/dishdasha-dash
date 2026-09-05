@@ -3,6 +3,7 @@ import { mkdir, readdir, rm } from 'node:fs/promises';
 
 await mkdir('public/assets/arcade', { recursive: true });
 await import('./prepare-run-art.mjs');
+await import('./prepare-dance-art.mjs');
 for (const name of ['neighborhood', 'coop', 'souq', 'desert', 'wedding', 'hero-sheet', 'props-sheet', 'extra-sheet']) {
   await sharp(`art/source/${name}.png`)
     .webp(name.endsWith('sheet') ? { lossless: true, effort: 6 } : { quality: 93, effort: 6 })

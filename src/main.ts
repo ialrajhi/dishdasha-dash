@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import "./style.css";
 import "./arcade.css";
+import "./dance/dance.css";
 import { GameUI, type Screen } from "./ui/GameUI";
 import { MenuScene } from "./scenes/MenuScene";
 import { BootScene } from "./scenes/BootScene";
@@ -22,8 +23,8 @@ const game = new Phaser.Game({
   parent: "phaser-game",
   width: WIDTH * 2,
   height: HEIGHT * 2,
-  pixelArt: true,
-  roundPixels: true,
+  pixelArt: false,
+  roundPixels: false,
   backgroundColor: "#529e9b",
   scale: {
     mode: Phaser.Scale.FIT,
@@ -38,8 +39,8 @@ const game = new Phaser.Game({
   input: { activePointers: 3, keyboard: true },
   scene: [BootScene, MenuScene, GameScene],
   audio: { noAudio: true },
-  render: { antialias: false },
-  fps: { target: 60, limit: 60, forceSetTimeOut: false },
+  render: { antialias: true },
+  fps: { target: 60, forceSetTimeOut: false },
 });
 game.events.on("assets-ready", () => {
   assetsReady = true;
@@ -83,6 +84,7 @@ function start(level = 1, reset = true) {
 function menu(screen: Screen = "menu") {
   if (!assetsReady) return;
   game.scene.stop("Game");
+  if (game.scene.isPaused("Menu")) game.scene.resume("Menu");
   if (!game.scene.isActive("Menu")) game.scene.start("Menu");
   audio.pause(false);
   ui.show(screen);
@@ -162,6 +164,12 @@ function action(name: string, value?: string) {
         start(id);
       break;
     }
+    case "dance":
+      game.scene.stop("Game");
+      game.scene.pause("Menu");
+      audio.pause(true);
+      ui.show("dance");
+      break;
     case "levels":
       menu("levels");
       break;
@@ -211,6 +219,7 @@ function action(name: string, value?: string) {
     case "music":
     case "sfx":
     case "reducedMotion":
+    case "steadyView":
       save.settings({ [name]: !save.data.settings[name] });
       audio.sync();
       ui.show("options");
@@ -238,6 +247,7 @@ function action(name: string, value?: string) {
       const muted = !save.data.settings.music && !save.data.settings.sfx;
       save.settings({ music: muted, sfx: muted });
       audio.sync();
+      if (ui.screen === "dance") { audio.pause(true); ui.dance?.syncSound(); }
       ui.chrome();
       break;
     }
@@ -274,7 +284,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     if (ui.screen === "playing") pause();
     audio.pause(true);
-  } else if (!["pause", "options", "over"].includes(ui.screen))
+  } else if (!["pause", "options", "over", "dance"].includes(ui.screen))
     audio.pause(false);
 });
 window.addEventListener("blur", () => {
@@ -284,16 +294,17 @@ window.addEventListener("blur", () => {
 });
 window.addEventListener("focus", () => {
   foreground = true;
-  if (!["pause", "over"].includes(ui.screen) && !document.hidden) audio.pause(false);
+  if (!["pause", "over", "dance"].includes(ui.screen) && !document.hidden) audio.pause(false);
 });
 platformEvents(() => {
   foreground = false;
+  ui.dance?.suspend();
   if (ui.screen === "playing") pause();
   audio.pause(true);
   save.persist();
 }, () => {
   foreground = true;
-  if (!["pause", "over"].includes(ui.screen)) audio.pause(false);
+  if (!["pause", "over", "dance"].includes(ui.screen)) audio.pause(false);
 }, () => {
   if (ui.screen === "playing") pause();
   else if (ui.screen === "menu") minimizeAndroid();

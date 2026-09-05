@@ -24,6 +24,12 @@ try {
   await page.locator('[data-action="licenses"]').click();
   await expect(page.locator('#license-copy')).toContainText('THIRD-PARTY NOTICES');
   await page.locator('.back-button').click();await page.locator('.back-button').click();await page.locator('.back-button').click();
+  await page.locator('[data-action="dance"]').click();
+  await expect(page.locator('.dance-guest:not(:disabled)')).toHaveCount(12);
+  await page.locator('[data-guest="cat"]').click();
+  await expect(page.locator('.dance-count')).toHaveText('1 / 24');
+  await page.locator('#dance-track').selectOption('3');
+  await page.locator('.dance-header [data-action="back"]').click();
   await page.locator('[data-action="start"]').click();
   await page.waitForTimeout(400);
   await expect(page.locator('#level-label')).toContainText('الفريج');
@@ -48,5 +54,9 @@ try {
   const page=await second.firstWindow();await page.waitForSelector('.asset-loading',{state:'detached'});
   await page.locator('[data-action="options"]').click();
   await expect(page.locator('#volume')).toHaveValue('35');
-  console.log('Desktop settings persisted across process relaunch.');
+  await page.locator('.back-button').click();
+  await page.locator('[data-action="dance"]').click();
+  await expect(page.locator('.dance-count')).toHaveText('1 / 24');
+  await expect(page.locator('#dance-track')).toHaveValue('3');
+  console.log('Desktop settings and dance party persisted across process relaunch.');
 } finally { await second.close(); await rm(profile,{recursive:true,force:true}); }

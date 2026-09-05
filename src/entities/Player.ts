@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { save } from "../systems/SaveManager";
 import { HERO_SCALE, heroFrame } from "../utils/ArcadeArt";
 export type PlayerState =
   | "idle"
@@ -72,6 +73,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   land() {
     this.scene.tweens.killTweensOf(this.visual);
     this.visual.setScale(HERO_SCALE);
+    if (save.data.settings.steadyView || save.data.settings.reducedMotion) return;
     this.scene.tweens.add({
       targets: this.visual,
       scaleX: HERO_SCALE * 1.08,

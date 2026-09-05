@@ -1,8 +1,8 @@
 {
-  "version": "1.1.1",
+  "version": "1.2.0",
   "checkedDate": "2026-09-05",
-  "unitTests": 18,
-  "browserTests": 15,
+  "unitTests": 20,
+  "browserTests": 17,
   "browserTestsSkipped": 0,
   "androidPhone": {
     "testedAt": "2026-09-05T18:33:22.027Z",
@@ -38,12 +38,12 @@
   },
   "desktop": {
     "electron": "44.2.0",
-    "macOSArm64": "Packaged executable smoke passed: offline, menus, licenses, fullscreen, jump/pause, sandbox, blocked external network, settings after relaunch",
+    "macOSArm64": "Packaged executable smoke passed: offline, menus, licenses, fullscreen, jump/pause, sandbox, blocked external network, settings after relaunch; Go Dance all 12 character assets loaded offline and party/track persisted after relaunch",
     "windowsX64": "Cross-packaged; not executed on Windows",
     "steamInstallation": "Not tested"
   },
   "androidRelease": {
-    "versionCode": 2,
+    "versionCode": 3,
     "targetSdk": 36,
     "lintErrors": 0,
     "lintWarnings": 12,
@@ -55,10 +55,10 @@
   "engineVideoPolyfillExcluded": true,
   "noticeAssetCheckedInApkAndAab": true,
   "artifactSha256": [
-    "3b3dbcaa0eb5daaaff32045392a1517efda246c5be3b3aae32ed626b8d16e657  Dishdasha-Dash-1.1.1-Windows-x64.zip",
-    "1fbaf0a5c7d530196ad90d1294664c5dfecea16e952ee0170bd156146e50e13b  Dishdasha-Dash-1.1.1-macOS-arm64.zip",
-    "6394a117fb282c8b02a6e379dd33c86c9cc48bb42d24e514a94d9fc1be04ec10  android/Dishdasha-Dash-1.1.1-test.apk",
-    "e0fc763ad9d789663a2039a3a41f15eb17705b0fe66d63cbd7de06e164fa8666  android/Dishdasha-Dash-1.1.1-unsigned.aab"
+    "e3a1841536beb1b749798d2b33beb67b870eea7a5ac3909f28a804a52d0b0bbd  Dishdasha-Dash-1.2.0-Windows-x64.zip",
+    "e1db2285b38ea64cd3ae91117276fc689fb08204396a5b7df3912df7a03f14b0  Dishdasha-Dash-1.2.0-macOS-arm64.zip",
+    "6e2ae4e30afc400dbda2195cb70b2eacd689a21d5c75e9f965b276b21937c1f8  android/Dishdasha-Dash-1.2.0-test.apk",
+    "b3682a431cc2416d6366cfdfc7f0430c76d272be9c64a372cd799c1a42d981d1  android/Dishdasha-Dash-1.2.0-unsigned.aab"
   ],
   "animationRevision": {
     "heroFrames": 4,
@@ -68,5 +68,17 @@
     "menuIdleGestures": true,
     "gameplayBrandingRemoved": true,
     "browserRegressionPassed": true
+  },
+  "danceMode": {
+    "characters": 12,
+    "posesEach": 3,
+    "movementStyles": 5,
+    "originalTracks": 6,
+    "maximumDancers": 24,
+    "desktopAndTouchPlacementPassed": true,
+    "savedPartyReloadPassed": true,
+    "packagedMacOfflinePartyPassed": true,
+    "steadyViewDefault": true,
+    "gentleDanceDefault": true
   }
 }

@@ -1,3 +1,4 @@
+import { DanceRoom, danceMarkup } from "../dance/DanceRoom";
 import { icon } from "./icons";
 import { save } from "../systems/SaveManager";
 import { t, worldT, bilingual, type CopyKey } from "../systems/LocalizationManager";
@@ -7,6 +8,7 @@ import { LEVELS } from "../levels/levels";
 import { campaign, type LevelResult } from "../systems/ScoreManager";
 import type { Snapshot } from "../scenes/GameScene";
 export type Screen =
+  | "dance"
   | "menu"
   | "levels"
   | "options"
@@ -23,6 +25,7 @@ const number = (n: number) => n.toLocaleString("en-US");
 const button = (key: CopyKey, action: string, ico = "arrow", primary = false) =>
   `<button class="game-button ${primary ? "primary" : ""}" data-action="${action}"><span class="button-icon">${icon(ico)}</span><span>${t(key)}</span>${icon("arrow")}</button>`;
 export class GameUI {
+  dance?: DanceRoom;
   screen: Screen = "menu";
   previous: Screen = "menu";
   private layer: HTMLElement;
@@ -63,7 +66,7 @@ export class GameUI {
       }
       if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code))
         return;
-      if ((e.target as HTMLElement)?.tagName === "INPUT") return;
+      if (["INPUT", "SELECT", "CANVAS"].includes((e.target as HTMLElement)?.tagName)) return;
       e.preventDefault();
       const buttons = Array.from(
         this.layer.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
@@ -146,6 +149,7 @@ export class GameUI {
     screen: Screen,
     data?: { result?: LevelResult; state?: Snapshot; deaths?: number },
   ) {
+    this.dance?.destroy(); this.dance = undefined;
     const focused = screen === this.screen ? (document.activeElement as HTMLElement)?.dataset.action : undefined;
     this.screen = screen;
     if (data?.result) this.result = data.result;
@@ -156,6 +160,7 @@ export class GameUI {
     this.layer.className = `view-${screen}`;
     this.layer.dir = screen === "playing" || save.data.settings.language === "ar" ? "rtl" : "ltr";
     const render: Record<Screen, () => string> = {
+      dance: () => danceMarkup(),
       menu: () => this.menu(),
       levels: () => this.levels(),
       options: () => this.options(),
@@ -170,6 +175,7 @@ export class GameUI {
       victory: () => this.victory(),
     };
     this.layer.innerHTML = render[screen]();
+    if (screen === "dance") this.dance = new DanceRoom(this.layer);
     if (screen === "licenses") {
       void fetch(`${import.meta.env.BASE_URL}third-party-licenses.txt`)
         .then(response => { if (!response.ok) throw Error(); return response.text(); })
@@ -190,7 +196,7 @@ export class GameUI {
     return `<div class="panel-heading"><button class="back-button" data-action="back" aria-label="${t("back")}">${icon("back")}</button><div><h1>${title}</h1><p>${subtitle}</p></div><span class="small-mark">د / D</span></div>`;
   }
   private menu() {
-    return `<div class="main-menu"><div class="menu-copy"><div class="eyebrow"><span></span> ${bilingual("مغامرة كويتية على السريع", "A LITTLE KUWAITI ADVENTURE")}</div><h1 class="game-title"><span lang="ar">دشداشة</span><strong>DASH<span class="title-spark">✦</span></strong><small class="english-title" lang="en">DISHDASHA DASH</small></h1><p class="menu-tagline">${t("travel")} <span>✦</span></p><div class="menu-buttons">${button("start", "start", "play", true)}${button("select", "levels", "map")}<div class="menu-secondary"><button data-action="options">${icon("settings")}${t("options")}</button><button data-action="how">${icon("help")}${t("how")}</button></div></div><button class="high-score-link" data-action="high">${icon("trophy")}<span>${t("high")}</span><strong>${number(save.data.best).padStart(6, "0")}</strong></button></div><div class="menu-stamp"><span class="stamp-star">✦</span><span>يلا!<small>شد حيلك</small></span></div><div class="level-route"><span class="route-active">01</span><i></i><span>02</span><i></i><span>03</span><i></i><span>04</span><i></i><span>05</span><small>${t("campaign")}</small></div><span class="menu-coordinate"><span class="kuwait-flag"></span> KUWAIT · ALWAYS A GOOD STAGE</span></div>`;
+    return `<div class="main-menu"><div class="menu-copy"><div class="eyebrow"><span></span> ${bilingual("مغامرة كويتية على السريع", "A LITTLE KUWAITI ADVENTURE")}</div><h1 class="game-title"><span lang="ar">دشداشة</span><strong>DASH<span class="title-spark">✦</span></strong><small class="english-title" lang="en">DISHDASHA DASH</small></h1><p class="menu-tagline">${t("travel")} <span>✦</span></p><div class="menu-buttons">${button("start", "start", "play", true)}${button("select", "levels", "map")}<button class="dance-entry" data-action="dance"><span>♫</span><strong>Go Dance<small>${bilingual("سو حفلتك", "Make your own party")}</small></strong><b>＋</b></button><div class="menu-secondary"><button data-action="options">${icon("settings")}${t("options")}</button><button data-action="how">${icon("help")}${t("how")}</button></div></div><button class="high-score-link" data-action="high">${icon("trophy")}<span>${t("high")}</span><strong>${number(save.data.best).padStart(6, "0")}</strong></button></div><div class="menu-stamp"><span class="stamp-star">✦</span><span>يلا!<small>شد حيلك</small></span></div><div class="level-route"><span class="route-active">01</span><i></i><span>02</span><i></i><span>03</span><i></i><span>04</span><i></i><span>05</span><small>${t("campaign")}</small></div><span class="menu-coordinate"><span class="kuwait-flag"></span> KUWAIT · ALWAYS A GOOD STAGE</span></div>`;
   }
   private levels() {
     return `<div class="full-panel">${this.heading(t("select"), t("travel"))}<div class="level-cards">${LEVELS.map(
@@ -205,7 +211,7 @@ export class GameUI {
   }
   private options() {
     const s = save.data.settings;
-    return `<div class="modal-wrap"><div class="modal options-modal">${this.heading(t("options"), bilingual("على كيفك", "Make yourself comfortable"))}<div class="setting-row"><label>${icon("sound")} ${t("music")}</label><button class="toggle ${s.music ? "enabled" : ""}" data-action="music" aria-pressed="${s.music}">${t(s.music ? "on" : "off")}<i></i></button></div><div class="setting-row"><label>${icon("tea")} ${t("sfx")}</label><button class="toggle ${s.sfx ? "enabled" : ""}" data-action="sfx" aria-pressed="${s.sfx}">${t(s.sfx ? "on" : "off")}<i></i></button></div><div class="setting-row"><label>${bilingual("تقليل الحركة", "Reduce effects")}</label><button class="toggle ${s.reducedMotion ? "enabled" : ""}" data-action="reducedMotion" aria-pressed="${s.reducedMotion}">${t(s.reducedMotion ? "on" : "off")}<i></i></button></div><div class="setting-row volume-row"><label for="volume">${t("volume")}</label><input id="volume" type="range" min="0" max="100" value="${s.volume}"/><output id="volume-value">${s.volume}%</output></div><div class="setting-row"><label>${t("screen")}</label><button class="small-button" data-action="fullscreen">${icon("fullscreen")} ${t("screen")}</button></div><div class="setting-row"><label>${t("language")}</label><div class="segmented"><button data-action="set-language" data-value="ar" class="${s.language === "ar" ? "selected" : ""}">العربية</button><button data-action="set-language" data-value="en" class="${s.language === "en" ? "selected" : ""}">English</button></div></div><button class="small-button about-button" data-action="about">${bilingual("عن اللعبة والخصوصية", "About & privacy")}</button><button class="reset-button" data-action="reset">${t("reset")}</button>${desktop ? `<button class="small-button quit-button" data-action="quit">${bilingual("إغلاق اللعبة", "Quit game")}</button>` : ""}<div id="reset-confirm"></div></div></div>`;
+    return `<div class="modal-wrap"><div class="modal options-modal">${this.heading(t("options"), bilingual("على كيفك", "Make yourself comfortable"))}<div class="setting-row"><label>${icon("sound")} ${t("music")}</label><button class="toggle ${s.music ? "enabled" : ""}" data-action="music" aria-pressed="${s.music}">${t(s.music ? "on" : "off")}<i></i></button></div><div class="setting-row"><label>${icon("tea")} ${t("sfx")}</label><button class="toggle ${s.sfx ? "enabled" : ""}" data-action="sfx" aria-pressed="${s.sfx}">${t(s.sfx ? "on" : "off")}<i></i></button></div><div class="setting-row"><label>${bilingual("تقليل الحركة", "Reduce effects")}</label><button class="toggle ${s.reducedMotion ? "enabled" : ""}" data-action="reducedMotion" aria-pressed="${s.reducedMotion}">${t(s.reducedMotion ? "on" : "off")}<i></i></button></div><div class="setting-row"><label>${bilingual("منظر ثابت", "Steady view")}<small class="setting-hint">${bilingual("خلفية ثابتة بدون اهتزاز", "Still skyline, no camera shake")}</small></label><button class="toggle ${s.steadyView ? "enabled" : ""}" data-action="steadyView" aria-pressed="${s.steadyView}">${t(s.steadyView ? "on" : "off")}<i></i></button></div><div class="setting-row volume-row"><label for="volume">${t("volume")}</label><input id="volume" type="range" min="0" max="100" value="${s.volume}"/><output id="volume-value">${s.volume}%</output></div><div class="setting-row"><label>${t("screen")}</label><button class="small-button" data-action="fullscreen">${icon("fullscreen")} ${t("screen")}</button></div><div class="setting-row"><label>${t("language")}</label><div class="segmented"><button data-action="set-language" data-value="ar" class="${s.language === "ar" ? "selected" : ""}">العربية</button><button data-action="set-language" data-value="en" class="${s.language === "en" ? "selected" : ""}">English</button></div></div><button class="small-button about-button" data-action="about">${bilingual("عن اللعبة والخصوصية", "About & privacy")}</button><button class="reset-button" data-action="reset">${t("reset")}</button>${desktop ? `<button class="small-button quit-button" data-action="quit">${bilingual("إغلاق اللعبة", "Quit game")}</button>` : ""}<div id="reset-confirm"></div></div></div>`;
   }
   confirmReset() {
     document.querySelector("#reset-confirm")!.innerHTML =
@@ -215,7 +221,7 @@ export class GameUI {
       ?.focus();
   }
   private about() {
-    return `<div class="modal-wrap"><div class="modal about-modal">${this.heading(bilingual("عن اللعبة والخصوصية", "About & privacy"), "DISHDASHA DASH · 1.1.0")}
+    return `<div class="modal-wrap"><div class="modal about-modal">${this.heading(bilingual("عن اللعبة والخصوصية", "About & privacy"), "DISHDASHA DASH · 1.2.0")}
       <div class="privacy-copy"><h2>${bilingual("مغامرة كويتية", "A Kuwaiti adventure")}</h2><p>${bilingual("من الفريج إلى العرس: خمس مراحل، استكانات چاي، ودلة ذهبية بكل مرحلة. القوائم بالإنجليزي افتراضياً، واللافتات وعالم اللعبة بالعربي.", "From the neighborhood to the wedding: five stages, tea to collect, and a golden dallah in each stage. Menus begin in English; the world and street signs stay Arabic.")}</p>
       <h2>${bilingual("خصوصيتك", "Your privacy")}</h2><p>${bilingual("اللعبة ما فيها حسابات أو إعلانات أو مشتريات، وما تجمع أو تشارك معلومات شخصية. التقدم والنتايج والإعدادات تنحفظ على جهازك. ما نستخدم تحليلات أو تتبع داخل اللعبة.", "The game has no accounts, ads, purchases, analytics, or tracking. The game does not collect or share personal data. Progress, scores, and settings are stored on your device.")}</p>
       <p>${bilingual("تقدر تمسح تقدمك من الإعدادات. لمسح كل البيانات، امسح بيانات التطبيق أو بيانات الموقع من جهازك. نسخة التطبيق تشتغل بدون إنترنت. المتصفح يحتاج اتصال لتحميل اللعبة، وتسجيل الدخول للموقع الخاص تديره خدمة الاستضافة.", "Use Reset progress in Options to clear scores and unlocks while keeping your settings. Clear the app’s storage or browser site data to remove everything. Installed builds work offline. The browser version needs a connection to load; private-site sign-in is handled by the hosting service.")}</p>
