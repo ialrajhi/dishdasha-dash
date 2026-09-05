@@ -75,8 +75,8 @@ function pause() {
   if (ui.screen !== "playing") return;
   game.scene.pause("Game");
   scene().clearInput();
-  audio.play("pause");
   audio.pause(true);
+  audio.play("pause");
   ui.show("pause");
 }
 function resume() {
