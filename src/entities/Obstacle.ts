@@ -25,6 +25,7 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
   private originalX: number;
   private artScale = 1;
   private previousX = 0;
+  private suspension: Phaser.GameObjects.TileSprite[] = [];
   constructor(scene: Phaser.Scene, spec: HazardSpec) {
     super(scene, spec.x, GROUND, propTexture(spec.kind));
     this.spec = spec;
@@ -39,7 +40,13 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       this.artScale = (propHeight[spec.kind] ?? 36) / this.height;
       this.setScale(this.artScale);
       if (spec.kind === "ball") this.setOrigin(0.5).setY(GROUND - this.displayHeight / 2);
-      if (spec.kind === "awning") this.setDisplaySize(126, 150).setY(GROUND - 34);
+      if (spec.kind === "awning") {
+        this.setDisplaySize(126, 52).setY(GROUND - 50);
+        // Ropes continue above the viewport and meet the two metal suspension rings.
+        const anchorY = this.y - this.displayHeight + 5;
+        this.suspension = [-53, 53].map(dx => scene.add.tileSprite(this.x + dx, anchorY,
+          32, (anchorY + 30) / .2, "arcade-suspension-rope").setOrigin(.5, 1).setScale(.2).setDepth(17));
+      }
     }
   }
   capturePrevious() { this.previousX = this.x; }
@@ -85,8 +92,13 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       this.y = GROUND - Math.max(0, (this.x - playerX - 330) * 0.65);
     else if (this.spec.kind === "bag" && this.x - playerX <= 330) this.y = GROUND;
   }
+  destroy(fromScene?: boolean) {
+    this.suspension.forEach(rope => rope.destroy());
+    this.suspension = [];
+    super.destroy(fromScene);
+  }
   hitbox() {
-    if (this.spec.kind === "awning") return new Phaser.Geom.Rectangle(this.x - 49, GROUND - 184, 98, 150);
+    if (this.spec.kind === "awning") return new Phaser.Geom.Rectangle(this.x - 49, GROUND - 102, 98, 52);
     const [w, h] = sizes[this.spec.kind] ?? [27, 25];
     const bottom = this.spec.kind === "ball" ? this.y + this.displayHeight / 2 : this.y;
     return new Phaser.Geom.Rectangle(this.x - w / 2, bottom - h, w, h);

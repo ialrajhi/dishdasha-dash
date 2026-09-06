@@ -24,7 +24,7 @@ test('overhead obstacles require ducking, preserve feet, and award points only a
     for(let i=0;i<50;i++)step();
     return {feet,safe,standingHearts:s.hearts,standingHit:awning.hit};
   });
-  expect(report.feet).toEqual({y:300,bottom:300,height:18});
+  expect(report.feet).toEqual({y:300,bottom:300,height:44});
   expect(report.safe).toEqual({minHearts:3,pausedUnder:true,resolvedEarly:false,resolved:true,ducking:false});
   expect(report.standingHearts).toBe(2);expect(report.standingHit).toBe(true);
 });

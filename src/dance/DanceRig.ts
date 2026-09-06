@@ -30,7 +30,7 @@ export class DanceRig {
   private part(c: CanvasRenderingContext2D, index: number, x: number, y: number, width: number, height: number) {
     c.drawImage(this.parts[index], x - width / 2, y, width, height);
   }
-  private limb(c: CanvasRenderingContext2D, index: number, root: Point, end: Point, knee: Point, width: number) {
+  private limb(c: CanvasRenderingContext2D, index: number, root: Point, end: Point, knee: Point, width: number, section: 'both' | 'upper' | 'lower' = 'both') {
     // Two overlapping sections of one painted limb bend without a detached elbow/knee.
     const source = this.parts[index], overlap = .07;
     const segment = (a: Point, b: Point, sy: number, sh: number, extend: number) => {
@@ -39,8 +39,8 @@ export class DanceRig {
       c.beginPath(); c.roundRect(-width / 2, -extend, width, length + extend * 2, width * .42); c.clip();
       c.drawImage(source, 0, source.height * sy, source.width, source.height * sh, -width / 2, -extend, width, length + extend * 2); c.restore();
     };
-    segment(root, knee, 0, .5 + overlap, width * .14);
-    segment(knee, end, .5 - overlap, .5 + overlap, width * .14);
+    if (section !== 'lower') segment(root, knee, 0, .5 + overlap, width * .14);
+    if (section !== 'upper') segment(knee, end, .5 - overlap, .5 + overlap, width * .14);
   }
   draw(c: CanvasRenderingContext2D, kind: string, move: string, beat: number, gentle: boolean, still = false) {
     const l = layout(kind), pose = dancePose(move, still ? 0 : beat, gentle);
@@ -51,19 +51,24 @@ export class DanceRig {
       const hip = transform(side * l.hipX, -1 + l.hipY);
       const f = side < 0 ? pose.leftFoot : pose.rightFoot;
       const foot = {x:f[0], y:f[1] - .016};
-      const knee = solveLeg(hip, foot, l.legLength * .5, l.legLength * .5, side * -1);
+      // Long robes cover the thighs: bend knees inward beneath the hem rather
+      // than poking two disconnected white trouser stubs out through its sides.
+      const knee = solveLeg(hip, foot, l.legLength * .5, l.legLength * .5, l.bodyHeight > .8 ? side : -side);
       this.limb(c, side < 0 ? 3 : 4, hip, foot, knee, l.legLength * ratios[side < 0 ? 3 : 4]);
     }
     c.save(); c.translate(origin.x,origin.y); c.rotate(pose.lean);
-    this.part(c,0,l.bodyShift ?? 0,-.73,l.bodyHeight * ratios[0],l.bodyHeight);
-    for (const side of [-1,1]) {
+    const arms = [-1,1].map(side => {
       const [a,e] = side < 0 ? pose.leftArm : pose.rightArm;
-      const root = {x:side*l.shoulderX,y:-.73+l.shoulderY};
+      const root = {x:side*(l.shoulderX-.018),y:-.73+l.shoulderY};
       const half = l.armLength*.5;
       const elbow = {x:root.x-Math.sin(a)*half,y:root.y+Math.cos(a)*half};
       const hand = {x:elbow.x-Math.sin(a-e)*half,y:elbow.y+Math.cos(a-e)*half};
-      this.limb(c,side<0?1:2,root,hand,elbow,l.armLength * ratios[side < 0 ? 1 : 2]);
-    }
+      return {index:side<0?1:2,root,hand,elbow,width:l.armLength * ratios[side < 0 ? 1 : 2]};
+    });
+    // Shoulder roots tuck behind the costume; hands can still cross its front.
+    for (const a of arms) this.limb(c,a.index,a.root,a.hand,a.elbow,a.width,'upper');
+    this.part(c,0,l.bodyShift ?? 0,-.73,l.bodyHeight * ratios[0],l.bodyHeight);
+    for (const a of arms) this.limb(c,a.index,a.root,a.hand,a.elbow,a.width,'lower');
     c.restore();
   }
 }

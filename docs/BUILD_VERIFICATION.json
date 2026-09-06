@@ -1,7 +1,7 @@
 {
-  "version": "1.4.0",
+  "version": "1.4.1",
   "checkedDate": "2026-09-06",
-  "unitTests": 23,
+  "unitTests": 25,
   "browserTests": 20,
   "browserTestsSkipped": 0,
   "androidPhone": {
@@ -43,7 +43,7 @@
     "steamInstallation": "Not tested"
   },
   "androidRelease": {
-    "versionCode": 5,
+    "versionCode": 6,
     "targetSdk": 36,
     "lintErrors": 0,
     "lintWarnings": 12,
@@ -55,10 +55,10 @@
   "engineVideoPolyfillExcluded": true,
   "noticeAssetCheckedInApkAndAab": true,
   "artifactSha256": [
-    "616106cb8159fe8043dcda84093c5d1ef08c499bf8ca7c83327bc1d34bdfafd3  Dishdasha-Dash-1.4.0-Windows-x64.zip",
-    "d0ca6178946cbd382264c82e436b90a4ed10ce5d7c938ee0ba5721562ba73023  Dishdasha-Dash-1.4.0-macOS-arm64.zip",
-    "c0210552e5796f22655621497aec2da6d1c1d9fd8ba2156334d704956f77e967  android/Dishdasha-Dash-1.4.0-test.apk",
-    "04fad44b794c1b29006ac34538a0e3686df56cc1de15bd492fdc32984d1c64be  android/Dishdasha-Dash-1.4.0-unsigned.aab"
+    "b8639f76f1f20286f36306b850b5eac50721d88e9e1266dcb99aeb774f9a09bf  Dishdasha-Dash-1.4.1-Windows-x64.zip",
+    "4043b82d9661945bdfd358cc4c27b141499ede785fc4638e7ae134a88588d917  Dishdasha-Dash-1.4.1-macOS-arm64.zip",
+    "527f5b1a89f270a2a6ede36ed804eaa0b5dda037bfc7791ba286167a90a866ee  android/Dishdasha-Dash-1.4.1-test.apk",
+    "dbed0376008a83c462e89e43baad318cf022c246588c735bb97789c9c00f7b28  android/Dishdasha-Dash-1.4.1-unsigned.aab"
   ],
   "animationRevision": {
     "heroFrames": 12,
@@ -96,24 +96,32 @@
     "chefRemoved": true,
     "boyCapRemoved": true,
     "blackAbayaWomanAdded": true,
-    "motionProfile": "DANCE_PROFILE.json"
+    "motionProfile": "DANCE_PROFILE.json",
+    "shoulderCapsRemoved": true,
+    "robeKneesCovered": true,
+    "dallahHandleTransparent": true,
+    "catEyePigmentPreserved": true
   },
   "ducking": {
     "poses": 4,
     "standingHitbox": [
       19,
-      39
+      58
     ],
     "duckHitbox": [
       19,
-      18
+      44
     ],
-    "awningClearance": 34,
+    "awningClearance": 50,
     "allFiveCoursesPassed": true,
     "noAwningHitsInCourseTests": true,
     "keyboardAndMixedTouchHolds": true,
     "controllerHeldInputRecovery": true,
     "pauseUnderAwningSafe": true,
-    "avoidScoreAfterClearance": true
-  }
+    "avoidScoreAfterClearance": true,
+    "faceScaleRegressionPassed": true,
+    "suspensionRopesReachSceneTop": true,
+    "oldDuckWordRemoved": true
+  },
+  "browserRunNote": "19 passed initially; one menu test interrupted by production-build Vite reload, then passed on isolated rerun."
 }

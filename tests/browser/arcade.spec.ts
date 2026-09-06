@@ -97,7 +97,7 @@ test("cold loading protects the game, then every stage renders illustrated asset
         floor: s.textures.exists(`street-${s.level.id}`),
       };
     });
-    expect(state.body).toEqual([19, 39]);
+    expect(state.body).toEqual([19, 58]);
     expect(state.hiddenRoot).toBe(true);
     expect(state.hero).toMatch(/^hero-run/);
     expect(state.sync).toBeLessThan(4); // Render interpolation trails physics by at most one step.

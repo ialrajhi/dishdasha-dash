@@ -34,7 +34,7 @@ cd android
 ./gradlew :app:assembleDebug :app:bundleRelease :app:lintRelease
 ```
 
-The debug APK is for testing. The release AAB remains unsigned until the publisher configures their own upload key. Application ID `com.falrajhi.dishdashadash` and versionCode 1 are provisional until the publisher confirms the permanent identity.
+The debug APK is for testing. The release AAB remains unsigned until the publisher configures their own upload key. Application ID `com.falrajhi.dishdashadash` is provisional until the publisher confirms the permanent identity. The current test package is version 1.4.1 / versionCode 6.
 
 ```sh
 # From the project root, after building:

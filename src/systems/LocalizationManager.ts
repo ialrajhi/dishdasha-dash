@@ -35,7 +35,7 @@ const copy = {
   best: ["أفضل نتيجة", "Best score"],
   bestTea: ["أكثر چاي", "Best tea"],
   jump: ["نط!", "Jump!"],
-  duck: ["وطّي!", "Duck!"],
+  duck: ["انحناء", "Duck!"],
   level: ["المرحلة", "Level"],
   total: ["مجموع النقاط", "Total score"],
   bestLevel: ["أفضل مرحلة", "Best level"],
@@ -50,7 +50,7 @@ const copy = {
     "Five levels. One Kuwaiti adventure.",
   ],
   pause: ["وقف شوي", "Pause"],
-  touch: ["نط فوق الحواجز · وطّي تحت المظلة", "Jump over obstacles · duck under awnings"],
+  touch: ["نط فوق الحواجز · انحنِ تحت المظلة", "Jump over obstacles · duck under awnings"],
 } as const;
 export type CopyKey = keyof typeof copy;
 export const t = (key: CopyKey) =>

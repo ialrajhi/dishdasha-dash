@@ -41,7 +41,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .setScale(HERO_SCALE)
       .setDepth(20);
 
-    this.bodyRef.setSize(19, 39).setOffset(9, 9);
+    this.bodyRef.setSize(19, 58).setOffset(9, -10);
     this.setMaxVelocity(260, 700);
     this.lastVisualX = x;
     this.capturePrevious();
@@ -64,7 +64,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.ducking = active;
     // Both shapes share the same feet. Changing stance must not move the body.
     const bottom = this.bodyRef.bottom;
-    this.bodyRef.setSize(19, active ? 18 : 39, false).setOffset(9, active ? 30 : 9);
+    this.bodyRef.setSize(19, active ? 44 : 58, false).setOffset(9, active ? 4 : -10);
     this.bodyRef.position.y = bottom - this.bodyRef.height;
     this.bodyRef.updateCenter();
   }

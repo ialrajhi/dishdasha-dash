@@ -56,7 +56,6 @@ export class GameScene extends Phaser.Scene {
   private lastHud = 0;
   private debug?: Phaser.GameObjects.Graphics;
   private finalNotice = false;
-  private duckTaught = false;
   private shadow!: Phaser.GameObjects.Ellipse;
   constructor() {
     super("Game");
@@ -77,7 +76,6 @@ export class GameScene extends Phaser.Scene {
     this.keys.clear();
     this.lastHud = 0;
     this.finalNotice = false;
-    this.duckTaught = false;
   }
   create() {
     this.physics.disableUpdate();
@@ -464,7 +462,6 @@ export class GameScene extends Phaser.Scene {
       const distance = h.x - this.player.x;
       if (h.spec.kind === "awning" && distance < 290 && distance > 0 && !h.warned) {
         h.warned = true;
-        if (!this.duckTaught) { this.duckTaught = true; this.hooks.notice("وطّي راسك! اضغط مطوّل ↓", 1900); }
       }
       if (distance < 320 && distance > 0 && !h.warned && h.spec.moving) {
         h.warned = true;

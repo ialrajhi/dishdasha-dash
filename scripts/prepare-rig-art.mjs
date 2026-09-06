@@ -11,6 +11,9 @@ for(const sheet of manifest.sheets) {
  const visit=p=>{if(!mask[p]&&green(p)){mask[p]=1;queue[tail++]=p;}};
  for(let x=0;x<info.width;x++){visit(x);visit((info.height-1)*info.width+x);}
  for(let y=0;y<info.height;y++){visit(y*info.width);visit(y*info.width+info.width-1);}
+ // Enclosed negative space in the dallah handle is background too. Explicit
+ // asset seeds preserve intentional green details, especially the cat's eyes.
+ for(const [x,y] of sheet.backgroundSeeds ?? []) visit(y*info.width+x);
  while(head<tail){const p=queue[head++],x=p%info.width,y=Math.floor(p/info.width);if(x)visit(p-1);if(x+1<info.width)visit(p+1);if(y)visit(p-info.width);if(y+1<info.height)visit(p+info.width);}
  for(let p=0;p<mask.length;p++) {
   if(mask[p])data[p*4+3]=0;
