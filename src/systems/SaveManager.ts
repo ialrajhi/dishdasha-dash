@@ -22,6 +22,7 @@ export interface SaveData {
   levels: Record<number, LevelRecord>;
   settings: Settings;
   party: Party;
+  tutorial: "new" | "skipped" | "completed";
 }
 const defaults = (): SaveData => ({
   version: 2,
@@ -30,6 +31,7 @@ const defaults = (): SaveData => ({
   best: 0,
   levels: {},
   party: emptyParty(),
+  tutorial: "new",
   settings: { steadyView: true, music: true, sfx: true, volume: 55, language: "en", reducedMotion: typeof matchMedia !== "undefined" && matchMedia('(prefers-reduced-motion: reduce)').matches },
 });
 const safeNumber = (value: unknown, fallback = 0) =>
@@ -72,6 +74,8 @@ export class SaveManager {
           };
       }
       this.data.party = readParty(raw.party);
+      this.data.tutorial = raw.tutorial === "completed" || raw.tutorial === "skipped" ? raw.tutorial
+        : this.data.unlocked > 1 || this.data.best > 0 ? "completed" : "new";
       const s = raw.settings ?? {};
       this.data.settings = {
         steadyView: s.steadyView !== false,
@@ -109,6 +113,10 @@ export class SaveManager {
   }
   settings(changes: Partial<Settings>) {
     Object.assign(this.data.settings, changes);
+    this.persist();
+  }
+  tutorial(status: "skipped" | "completed") {
+    if (this.data.tutorial !== "completed") this.data.tutorial = status;
     this.persist();
   }
   golden(id: number) {

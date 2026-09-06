@@ -36,6 +36,7 @@ export class GameUI {
   private deaths = 0;
   private displayedScore = 0;
   private storageNotice = document.createElement("button");
+  private recoveryPanel?: HTMLElement;
   constructor(private action: (action: string, value?: string) => void) {
     document.querySelector("#app")!.innerHTML =
       `<div class="arcade-shell"><header class="shell-header"><a class="wordmark" href="#" data-action="menu"><span class="brand-square">د</span><span>دشداشة <b>DASH</b></span></a><div class="header-caption"><span class="live-dot"></span> SMALL DISHDASHA. BIG ADVENTURE.</div><nav class="header-controls"><button data-action="language" class="language-button" aria-label="Change language"></button><span class="divider"></span><button data-action="mute" aria-label="Toggle audio">${icon("sound")}</button><button data-action="fullscreen" aria-label="Fullscreen">${icon("fullscreen")}</button></nav></header><section class="game-cabinet" aria-label="دشداشة Dash"><div id="phaser-game"></div><div class="screen-texture" aria-hidden="true"></div><div id="ui-layer" inert></div><div class="asset-loading" role="status"><span class="loading-title">دشداشة <b>DASH</b></span><strong>Getting the neighborhood ready…</strong><small lang="ar">نجهز الفريج…</small><div class="loading-track"><i id="asset-progress"></i></div><span id="loading-percent">0%</span></div><div id="game-notice" role="status" aria-live="polite"></div><div class="portrait-message"><span>Rotate for a better view</span><small>Landscape fits the whole street</small><button data-action="portrait">كمل جذي</button></div><div class="cabinet-corner tl"></div><div class="cabinet-corner tr"></div><div class="cabinet-corner bl"></div><div class="cabinet-corner br"></div></section><footer class="shell-footer"><div class="control-guide"><kbd>SPACE</kbd><span id="control-copy"></span><span class="footer-dot">·</span><kbd>ESC</kbd><span id="pause-copy"></span></div><div class="footer-signature"><span class="kuwait-flag"></span><span>صنع بحب، ونص استكانة چاي</span></div><div class="version">ARCADE EDITION</div></footer></div>`;
@@ -58,6 +59,15 @@ export class GameUI {
       if (el.id === "volume") this.action("volume", el.value);
     });
     document.addEventListener("keydown", (e) => {
+      if (this.recoveryPanel) {
+        if (e.code === "Tab") {
+          e.preventDefault();
+          const buttons = Array.from(this.recoveryPanel.querySelectorAll<HTMLButtonElement>("button"));
+          const i = buttons.indexOf(document.activeElement as HTMLButtonElement);
+          buttons[(i + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length]?.focus();
+        }
+        return;
+      }
       if (this.screen === "playing") return;
       if (e.code === "Escape" && !e.repeat) {
         e.preventDefault();
@@ -98,8 +108,29 @@ export class GameUI {
   loadingError() {
     const panel = document.querySelector(".asset-loading");
     if (panel)
-      panel.innerHTML = `<strong>Could not load the game</strong><small>Check your connection and try again.</small><button class="small-button" data-action="reload">Retry</button>`;
+      panel.innerHTML = `<strong>Could not load the game</strong><small>Please try again. Your saved progress is safe.</small><button class="small-button" data-action="reload">Retry</button>`;
     panel?.querySelector<HTMLButtonElement>('button')?.focus();
+  }
+  graphicsRecovery(ready: boolean, canContinue: boolean) {
+    if (!this.recoveryPanel) {
+      this.recoveryPanel = document.createElement("div");
+      this.recoveryPanel.className = "graphics-recovery";
+      this.recoveryPanel.setAttribute("role", "alertdialog");
+      this.recoveryPanel.setAttribute("aria-modal", "true");
+      this.recoveryPanel.setAttribute("aria-labelledby", "recovery-title");
+      document.querySelector(".game-cabinet")!.append(this.recoveryPanel);
+    }
+    this.layer.inert = true;
+    document.querySelector<HTMLElement>(".shell-header")!.inert = true;
+    this.recoveryPanel.innerHTML = `<div class="recovery-card"><h1 id="recovery-title">${bilingual(ready ? "رجعت الصورة" : "توقفت الصورة لحظة", ready ? "Picture restored" : "A little interruption")}</h1><p>${bilingual(canContinue ? "وقفنا اللعبة بأمان. تقدمك ما تغير." : "أعد تحميل اللعبة للمتابعة. تقدمك المحفوظ موجود.", canContinue ? "Your game is safely paused. Nothing moves while the picture recovers." : "Reload to continue. Your saved progress is safe.")}</p>${ready && canContinue ? `<button class="small-button primary" data-action="graphics-continue">${bilingual("متابعة", "Continue")}</button>` : ""}<button class="small-button" data-action="reload">${bilingual("إعادة التحميل", "Reload · return to menu")}</button></div>`;
+    this.recoveryPanel.querySelector<HTMLButtonElement>("button")?.focus();
+  }
+  clearGraphicsRecovery() {
+    this.recoveryPanel?.remove();
+    this.recoveryPanel = undefined;
+    this.layer.inert = false;
+    document.querySelector<HTMLElement>(".shell-header")!.inert = false;
+    this.layer.querySelector<HTMLButtonElement>(".primary, .back-button")?.focus();
   }
   chrome() {
     const ar = save.data.settings.language === "ar";
@@ -159,6 +190,7 @@ export class GameUI {
     this.chrome();
     this.noticeEl.classList.remove("visible");
     this.layer.className = `view-${screen}`;
+    delete this.layer.dataset.practice;
     this.layer.dir = screen === "playing" || save.data.settings.language === "ar" ? "rtl" : "ltr";
     const render: Record<Screen, () => string> = {
       dance: () => danceMarkup(),
@@ -176,6 +208,7 @@ export class GameUI {
       victory: () => this.victory(),
     };
     this.layer.innerHTML = render[screen]();
+    if (screen === "how") this.layer.querySelector(".how-bottom")?.insertAdjacentHTML("afterend", `<button class="small-button practice-entry" data-action="practice">${bilingual("تدريب النط والانحناء", "Practice jump & duck")}</button>`);
     if (screen === "dance") this.dance = new DanceRoom(this.layer);
     if (screen === "licenses") {
       void fetch(`${import.meta.env.BASE_URL}third-party-licenses.txt`)
@@ -222,7 +255,7 @@ export class GameUI {
       ?.focus();
   }
   private about() {
-    return `<div class="modal-wrap"><div class="modal about-modal">${this.heading(bilingual("عن اللعبة والخصوصية", "About & privacy"), "DISHDASHA DASH · 1.4.1")}
+    return `<div class="modal-wrap"><div class="modal about-modal">${this.heading(bilingual("عن اللعبة والخصوصية", "About & privacy"), "DISHDASHA DASH · 1.5.0")}
       <div class="privacy-copy"><h2>${bilingual("مغامرة كويتية", "A Kuwaiti adventure")}</h2><p>${bilingual("من الفريج إلى العرس: خمس مراحل، استكانات چاي، ودلة ذهبية بكل مرحلة. القوائم بالإنجليزي افتراضياً، واللافتات وعالم اللعبة بالعربي.", "From the neighborhood to the wedding: five stages, tea to collect, and a golden dallah in each stage. Menus begin in English; the world and street signs stay Arabic.")}</p>
       <h2>${bilingual("خصوصيتك", "Your privacy")}</h2><p>${bilingual("اللعبة ما فيها حسابات أو إعلانات أو مشتريات، وما تجمع أو تشارك معلومات شخصية. التقدم والنتايج والإعدادات تنحفظ على جهازك. ما نستخدم تحليلات أو تتبع داخل اللعبة.", "The game has no accounts, ads, purchases, analytics, or tracking. The game does not collect or share personal data. Progress, scores, and settings are stored on your device.")}</p>
       <p>${bilingual("تقدر تمسح تقدمك من الإعدادات. لمسح كل البيانات، امسح بيانات التطبيق أو بيانات الموقع من جهازك. نسخة التطبيق تشتغل بدون إنترنت. المتصفح يحتاج اتصال لتحميل اللعبة، وتسجيل الدخول للموقع الخاص تديره خدمة الاستضافة.", "Use Reset progress in Options to clear scores and unlocks while keeping your settings. Clear the app’s storage or browser site data to remove everything. Installed builds work offline. The browser version needs a connection to load; private-site sign-in is handled by the hosting service.")}</p>
@@ -233,6 +266,22 @@ export class GameUI {
   licenseText(text: string) { const el = document.querySelector('#license-copy'); if (el) el.textContent = text; }
   private how() {
     return `<div class="modal-wrap"><div class="modal how-modal">${this.heading(t("how"), bilingual("يلا شد حيلك!", "Jump high. Stay low."))}<div class="how-intro">${bilingual("الريّال يركض بروحه. نط فوق الحواجز وانحنِ تحت المظلات!", "He runs automatically. Jump over street obstacles and hold Duck under hanging awnings!")}</div><div class="how-grid"><div><span class="how-icon">${icon("jump")}</span><h2>${bilingual("نطة صغيرة، نطة كبيرة", "A little hop. A big leap.")}</h2><p>${bilingual("اضغط ضغطة خفيفة لنطة صغيرة، أو طول الضغطة عشان تنط أعلى.", "Tap for a short hop. Hold a little longer to jump higher.")}</p><div class="key-row"><kbd>SPACE</kbd><kbd>↑</kbd><kbd>W</kbd><kbd>A / ✕</kbd></div></div><div><span class="how-icon tea-color">${icon("tea")}</span><h2>${bilingual("لا تنسى الچاي", "Don’t forget the tea")}</h2><p>${bilingual("كل استكانة +١٠٠. الدلة الذهبية +٥٠٠٠. جمّع كل الچاي وخذ بونص +٢٠٠٠!", "Each tea is +100. A golden dallah is +5,000. Collect every tea for a +2,000 bonus!")}</p></div><div><span class="how-icon heart-color">${icon("heart")}</span><h2>${bilingual("ثلاث قلوب، ثلاث فرص", "Three hearts. Three lives.")}</h2><p>${bilingual("نط فوق العربانة والدلة، وانحنِ تحت المظلة. إذا طحت ترد من آخر نقطة.", "Jump over carts and dallahs. Hold ↓ / S, the Duck button, or controller B / ○ to pass under awnings. Release to stand. If you fall, return to your latest checkpoint.")}</p></div></div><div class="how-bottom"><span>${icon("jump")} ${t("touch")}</span><span><kbd>ESC</kbd> ${t("pause")}</span></div>${button("start", "start", "play", true)}</div></div>`;
+  }
+  practice(step: "jump" | "duck" | "done", retry = false) {
+    if (this.screen !== "playing") return;
+    this.layer.dataset.practice = step;
+    this.layer.querySelector(".hud .pause-button")?.remove();
+    let card = this.layer.querySelector<HTMLElement>(".practice-card");
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "practice-card";
+      this.layer.append(card);
+    }
+    card.dir = save.data.settings.language === "ar" ? "rtl" : "ltr";
+    const title = step === "jump" ? bilingual("نط فوق الصندوق", "Jump over the box") : step === "duck" ? bilingual("اضغط مطوّل للانحناء", "Hold Duck under the awning") : bilingual("جاهز للمغامرة!", "Ready for the neighborhood!");
+    const hint = step === "jump" ? bilingual("اضغط زر النط أو Space أو A / ✕. طول الضغطة يزيد ارتفاع النطة.", "Press Jump, Space, or A / ✕. Hold a little longer to jump higher.") : step === "duck" ? bilingual("استمر بالضغط على ↓ أو S أو B / ○ لين تعدّي المظلة.", "Keep holding ↓, S, or B / ○ until you pass the awning.") : bilingual("تعلمت النط والانحناء. يلا نبدأ!", "You’ve got both moves. Time to collect some tea.");
+    card.innerHTML = `<div role="status" aria-live="polite"><small>${step === "done" ? "✓" : `${step === "jump" ? "1" : "2"} / 2`} · ${bilingual("تدريب", "PRACTICE")}${retry ? ` · ${bilingual("حاول مرة ثانية — بدون خسارة قلوب", "Try again — no hearts lost")}` : ""}</small><strong>${title}</strong><p>${hint}</p></div><div class="practice-actions"><button class="small-button" data-action="pause" aria-label="${t("pause")}">${icon("pause")}</button><button class="small-button primary" data-action="${step === "done" ? "practice-finish" : "practice-skip"}">${step === "done" ? t("start") : bilingual("تخطي التدريب", "Skip practice")}</button></div>`;
+    if (step === "done") card.querySelector<HTMLButtonElement>(".primary")?.focus();
   }
   private high() {
     return `<div class="modal-wrap"><div class="modal high-modal">${this.heading(t("high"), bilingual("أبطال الدشداشة", "Dishdasha hall of fame"))}<div class="big-trophy">${icon("trophy")}</div><strong class="record-number">${number(save.data.best)}</strong><p class="record-label">${t("best")}</p><div class="record-list">${LEVELS.map((l) => `<div><span><i>0${l.id}</i>${save.data.settings.language === "ar" ? l.ar : l.en}</span><b>${number(save.data.levels[l.id]?.score ?? 0)}</b><span class="tea-color">${save.data.levels[l.id]?.golden ? "★" : "☆"}</span></div>`).join("")}</div>${button("start", "start", "play", true)}</div></div>`;

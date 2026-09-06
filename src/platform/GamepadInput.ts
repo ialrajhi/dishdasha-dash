@@ -37,7 +37,7 @@ export class GamepadInput {
           if (!duck && this.ducking.delete(pad.index)) this.hooks.action('duck-up', `gamepad:${pad.index}`);
         } else {
           if (this.ducking.delete(pad.index)) this.hooks.action('duck-up', `gamepad:${pad.index}`);
-          const scope = document.querySelector('.asset-loading') ?? document.querySelector('[role="alertdialog"]') ?? document.querySelector('#ui-layer');
+          const scope = document.querySelector('.graphics-recovery') ?? document.querySelector('.asset-loading') ?? document.querySelector('[role="alertdialog"]') ?? document.querySelector('[data-practice="done"] .practice-card') ?? document.querySelector('#ui-layer');
           const items = Array.from(scope?.querySelectorAll<HTMLElement>('button:not(:disabled), input') ?? []).filter(el => el.getClientRects().length);
           const retry = document.querySelector<HTMLElement>('.storage-warning:not([hidden])');
           if (this.hooks.ready() && retry && !document.querySelector('[role="alertdialog"]')) items.push(retry);

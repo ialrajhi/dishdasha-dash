@@ -17,6 +17,9 @@ let currentLevel = 1;
 let optionsReturn: Screen = "menu";
 let assetsReady = false;
 let foreground = true;
+let graphicsState: "ok" | "lost" | "restored" = "ok";
+let graphicsInterruptedBoot = false;
+let menuWasActive = false;
 const ui = new GameUI(action);
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -53,6 +56,7 @@ game.events.on("art-ready", (textures: Phaser.Textures.TextureManager) => {
 });
 const scene = () => game.scene.getScene("Game") as GameScene;
 const hooks: GameHooks = {
+  practice: (step, retry) => ui.practice(step, retry),
   hud: (s) => ui.hud(s),
   notice: (text, duration) => {
     if (ui.screen === "playing") ui.notice(text, duration);
@@ -69,17 +73,19 @@ const hooks: GameHooks = {
     ui.show(result.id === 5 ? "victory" : "complete", { result });
   },
 };
-function start(level = 1, reset = true) {
+function start(level = 1, reset = true, practice = false) {
   if (!assetsReady) return;
   currentLevel = level;
-  if (reset) campaign.reset();
-  else campaign.results.delete(level);
+  if (!practice) {
+    if (reset) campaign.reset();
+    else campaign.results.delete(level);
+  }
   game.scene.stop("Menu");
   game.scene.stop("Game");
   ui.show("playing");
   audio.unlock();
   audio.pause(false);
-  game.scene.start("Game", { level, hooks });
+  game.scene.start("Game", { level, hooks, practice });
 }
 function menu(screen: Screen = "menu") {
   if (!assetsReady) return;
@@ -98,11 +104,13 @@ function pause() {
   ui.show("pause");
 }
 function resume() {
+  if (graphicsState !== "ok") return;
   ui.show("playing");
   scene().clearInput();
   game.scene.resume("Game");
   audio.pause(false);
   ui.hud(scene().snapshot());
+  if (scene().practiceStep) ui.practice(scene().practiceStep!, scene().practiceRetry);
 }
 function back() {
   if (document.querySelector('[role="alertdialog"]')) { ui.show("options"); return; }
@@ -142,6 +150,15 @@ function action(name: string, value?: string) {
     location.reload();
     return;
   }
+  if (name === "graphics-continue") {
+    if (graphicsState !== "restored" || graphicsInterruptedBoot) return;
+    graphicsState = "ok";
+    ui.clearGraphicsRecovery();
+    if (menuWasActive) game.scene.resume("Menu");
+    if (!["pause", "over", "dance", "options"].includes(ui.screen) && foreground && !document.hidden) audio.pause(false);
+    return;
+  }
+  if (graphicsState !== "ok") return;
   if (!assetsReady) return;
   if (!["jump-down", "jump-up", "duck-down", "duck-up", "volume"].includes(name)) {
     audio.unlock();
@@ -152,7 +169,19 @@ function action(name: string, value?: string) {
       save.persist();
       break;
     case "start":
-      start();
+      start(1, true, save.data.tutorial === "new");
+      break;
+    case "practice":
+      start(1, true, true);
+      break;
+    case "practice-skip":
+      if (scene().practiceStep) {
+        save.tutorial("skipped");
+        start();
+      }
+      break;
+    case "practice-finish":
+      if (scene().practiceStep === "done") start();
       break;
     case "level": {
       const id = Number(value);
@@ -161,7 +190,7 @@ function action(name: string, value?: string) {
         id <= 5 &&
         (DEV.unlockAllLevels || id <= save.data.unlocked)
       )
-        start(id);
+        start(id, true, id === 1 && save.data.tutorial === "new");
       break;
     }
     case "dance":
@@ -205,7 +234,7 @@ function action(name: string, value?: string) {
       resume();
       break;
     case "restart":
-      start(currentLevel, false);
+      start(currentLevel, false, !!scene().practiceStep);
       break;
     case "next":
       start(Math.min(5, currentLevel + 1), false);
@@ -285,12 +314,35 @@ window.addEventListener('save-recovered', () => {
   audio.sync();
   ui.notice(save.data.settings.language === 'ar' ? 'استرجعنا تقدمك المحفوظ' : 'Restored your saved progress');
 });
-new GamepadInput({ playing: () => ui.screen === "playing", ready: () => assetsReady, foreground: () => foreground, action });
+new GamepadInput({ playing: () => ui.screen === "playing" && scene().practiceStep !== "done", ready: () => assetsReady && graphicsState === "ok", foreground: () => foreground, action });
+game.events.once(Phaser.Core.Events.READY, () => {
+  game.renderer.on(Phaser.Renderer.Events.LOSE_WEBGL, () => {
+    graphicsState = "lost";
+    graphicsInterruptedBoot ||= !assetsReady;
+    menuWasActive = game.scene.isActive("Menu");
+    if (ui.screen === "playing") pause();
+    if (game.scene.isActive("Game")) game.scene.pause("Game");
+    if (menuWasActive) game.scene.pause("Menu");
+    ui.dance?.suspend();
+    audio.pause(true);
+    ui.graphicsRecovery(false, !graphicsInterruptedBoot);
+  });
+  // Phaser restores its textures first. Keep simulation paused until a real
+  // post-render event confirms that the restored renderer has drawn a frame.
+  game.renderer.on(Phaser.Renderer.Events.RESTORE_WEBGL, () => {
+    game.events.once(Phaser.Core.Events.POST_RENDER, () => {
+      const renderer = game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
+      if (renderer.contextLost || renderer.gl.isContextLost()) return;
+      graphicsState = "restored";
+      ui.graphicsRecovery(true, !graphicsInterruptedBoot);
+    });
+  });
+});
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     if (ui.screen === "playing") pause();
     audio.pause(true);
-  } else if (!["pause", "options", "over", "dance"].includes(ui.screen))
+  } else if (graphicsState === "ok" && !["pause", "options", "over", "dance"].includes(ui.screen))
     audio.pause(false);
 });
 window.addEventListener("blur", () => {
@@ -300,7 +352,7 @@ window.addEventListener("blur", () => {
 });
 window.addEventListener("focus", () => {
   foreground = true;
-  if (!["pause", "over", "dance"].includes(ui.screen) && !document.hidden) audio.pause(false);
+  if (graphicsState === "ok" && !["pause", "over", "dance"].includes(ui.screen) && !document.hidden) audio.pause(false);
 });
 platformEvents(() => {
   foreground = false;
@@ -310,8 +362,9 @@ platformEvents(() => {
   save.persist();
 }, () => {
   foreground = true;
-  if (!["pause", "over", "dance"].includes(ui.screen)) audio.pause(false);
+  if (graphicsState === "ok" && !["pause", "over", "dance"].includes(ui.screen)) audio.pause(false);
 }, () => {
+  if (graphicsState !== "ok") return;
   if (ui.screen === "playing") pause();
   else if (ui.screen === "menu") minimizeAndroid();
   else back();

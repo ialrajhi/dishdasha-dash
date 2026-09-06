@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// Upload credentials stay in the environment and are only used for an explicit
+// release-signing task. Ordinary test builds never silently use a production key.
+def uploadSigningRequested = providers.gradleProperty('dashUploadSigning').orNull == 'true'
+def uploadKeys = ['DASH_UPLOAD_KEYSTORE', 'DASH_UPLOAD_STORE_PASSWORD', 'DASH_UPLOAD_KEY_ALIAS', 'DASH_UPLOAD_KEY_PASSWORD']
+if (uploadSigningRequested && uploadKeys.any { !System.getenv(it)?.trim() }) {
+    throw new GradleException('Upload signing requires all four DASH_UPLOAD_* environment values. No unsigned release will be substituted.')
+}
+
 android {
     namespace = "com.falrajhi.dishdashadash"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +15,8 @@ android {
         applicationId "com.falrajhi.dishdashadash"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.4.1"
+        versionCode 7
+        versionName "1.5.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +24,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    if (uploadSigningRequested) {
+        signingConfigs {
+            upload {
+                storeFile file(System.getenv('DASH_UPLOAD_KEYSTORE'))
+                storePassword System.getenv('DASH_UPLOAD_STORE_PASSWORD')
+                keyAlias System.getenv('DASH_UPLOAD_KEY_ALIAS')
+                keyPassword System.getenv('DASH_UPLOAD_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (uploadSigningRequested) signingConfig signingConfigs.upload
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

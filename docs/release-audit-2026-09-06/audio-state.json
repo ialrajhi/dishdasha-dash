@@ -1,0 +1,49 @@
+{
+  "game": {
+    "audioState": "running",
+    "playingTimer": true,
+    "pausedTimer": false,
+    "pausedVoices": 2
+  },
+  "tracks": [
+    {
+      "i": 0,
+      "timer": true,
+      "state": "running",
+      "voices": 6
+    },
+    {
+      "i": 1,
+      "timer": true,
+      "state": "running",
+      "voices": 6
+    },
+    {
+      "i": 2,
+      "timer": true,
+      "state": "running",
+      "voices": 6
+    },
+    {
+      "i": 3,
+      "timer": true,
+      "state": "running",
+      "voices": 6
+    },
+    {
+      "i": 4,
+      "timer": true,
+      "state": "running",
+      "voices": 6
+    },
+    {
+      "i": 5,
+      "timer": true,
+      "state": "running",
+      "voices": 6
+    }
+  ],
+  "partyPaused": true,
+  "partyTimer": false,
+  "partyVoices": 0
+}

@@ -1,4 +1,4 @@
-/* Illustrated arcade edition. The game remains a 640×360 world, rendered at 2×. */
+/* Illustrated arcade edition. The game remains a 640×360 world, rendered at 3×. */
 :root {
   --ink: #202333;
   --cream: #fff0cb;
@@ -1000,3 +1000,33 @@ body {
 .game-bottom { gap:12px;pointer-events:none; }
 .game-bottom button { pointer-events:auto; }
 .game-bottom > span { margin-inline:auto;text-align:center; }
+
+/* Recovery remains readable even when the canvas or custom font is unavailable. */
+.graphics-recovery { position:absolute;inset:0;z-index:100;display:grid;place-items:center;padding:20px;background:#0b192cf5;color:#fff0ce;pointer-events:auto; }
+.recovery-card { width:min(480px,100%);text-align:center;font-family:Arial,sans-serif; }
+.recovery-card h1 { font-size:clamp(22px,3cqw,34px);line-height:1.15;margin:0 0 12px; }
+.recovery-card p { font-size:16px;line-height:1.5;margin:0 0 20px; }
+.recovery-card button { display:block;margin:10px auto;min-height:44px;font-size:16px;padding:10px 20px;background:#ffcf61;color:#18253b; }
+.practice-card { position:absolute;inset:16px 18px auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;border:2px solid #25324a;border-radius:10px;background:#fff0d5f7;box-shadow:0 4px 0 #111e3280;color:#202333;pointer-events:auto; }
+.practice-card small { display:block;font-size:13px;letter-spacing:.06em;font-weight:700;color:#596275; }
+.practice-card strong { display:block;font-size:clamp(18px,2.3cqw,30px);line-height:1.25;margin:4px 0; }
+.practice-card p { font-size:clamp(14px,1.3cqw,18px);line-height:1.35;margin:4px 0 0; }
+.practice-card button { min-height:44px;flex-shrink:0;font-size:14px;padding:10px 16px;background:#ffd066;color:#202333; }
+[data-practice] .hud { visibility:hidden; }
+.practice-entry { display:block;min-height:44px;margin:12px auto;font-size:16px; }
+@media (max-height:500px) and (orientation:landscape) {
+  .practice-card { inset:8px 12px auto;padding:8px 12px;gap:10px; }
+  .practice-card small { font-size:12px; }
+  .practice-card strong { font-size:18px; }
+  .practice-card p { font-size:14px;margin-top:2px; }
+}
+@media (orientation:portrait) {
+  .practice-card { inset:8px 8px auto;padding:10px;align-items:flex-start;gap:8px; }
+  .practice-card strong { font-size:16px; }
+  .practice-card p { font-size:14px; }
+  .practice-card button { max-width:100px;padding:8px; }
+}
+.practice-actions { display:flex;align-items:center;gap:8px; }
+.practice-actions [data-action="pause"] { width:44px;padding:10px; }
+.practice-actions svg { width:20px;height:20px; }
+@media (orientation:portrait) { .practice-actions { flex-direction:column; } }

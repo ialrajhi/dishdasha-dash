@@ -1,0 +1,11 @@
+{
+  "apkSha256": "527f5b1a89f270a2a6ede36ed804eaa0b5dda037bfc7791ba286167a90a866ee",
+  "apkBytes": 17926034,
+  "nativeLibraries": [],
+  "webIndexMatchesCurrentDist": true,
+  "licensesBundled": true,
+  "lint": {
+    "Error": 0,
+    "Warning": 12
+  }
+}

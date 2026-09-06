@@ -1,0 +1,30 @@
+[
+  {
+    "kind": "normal",
+    "readyMs": 1852,
+    "errors": []
+  },
+  {
+    "kind": "font-failure",
+    "loading": 1,
+    "loadingText": "دشداشة DASH\nGetting the neighborhood ready…\nنجهز الفريج…\n100%",
+    "menuVisible": true,
+    "errors": [
+      "A network error occurred."
+    ]
+  },
+  {
+    "kind": "context-loss",
+    "before": {
+      "x": 284.9166666666666,
+      "phase": "running",
+      "screen": "playing"
+    },
+    "after": {
+      "x": 647.4166666666666,
+      "phase": "running",
+      "screen": "playing"
+    },
+    "errors": []
+  }
+]

@@ -162,3 +162,17 @@ describe('release save guarantees', () => {
     expect(JSON.parse(stored).levels[2].golden).toBe(true);
   });
 });
+
+describe('practice progress migration', () => {
+  it('keeps completed and skipped lessons, migrates established players and resets practice with progress', () => {
+    const s=new SaveManager();
+    expect(s.data.tutorial).toBe('new');
+    s.tutorial('skipped');expect(new SaveManager().data.tutorial).toBe('skipped');
+    s.tutorial('completed');expect(new SaveManager().data.tutorial).toBe('completed');
+    s.tutorial('skipped');expect(new SaveManager().data.tutorial).toBe('completed');
+    s.hydrate(JSON.stringify({version:2,unlocked:3,best:1234,levels:{2:{score:1234,tea:8,golden:true}},settings:{volume:22,language:'ar'}}));
+    expect(s.data.tutorial).toBe('completed');expect(s.data.levels[2].golden).toBe(true);
+    s.reset();expect(s.data.tutorial).toBe('new');expect(s.data.settings.volume).toBe(22);expect(s.data.settings.language).toBe('ar');
+    s.hydrate(JSON.stringify({version:2,tutorial:'bad'}));expect(s.data.tutorial).toBe('new');
+  });
+});

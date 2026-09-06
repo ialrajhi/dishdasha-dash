@@ -1,8 +1,8 @@
 {
-  "version": "1.4.1",
+  "version": "1.5.0",
   "checkedDate": "2026-09-06",
-  "unitTests": 25,
-  "browserTests": 20,
+  "unitTests": 26,
+  "browserTests": 28,
   "browserTestsSkipped": 0,
   "androidPhone": {
     "testedAt": "2026-09-05T18:33:22.027Z",
@@ -40,13 +40,15 @@
     "electron": "44.2.0",
     "macOSArm64": "Packaged executable smoke passed: offline, menus, licenses, fullscreen, jump/pause, sandbox, blocked external network, settings after relaunch; Go Dance all 12 character assets loaded offline and party/track persisted after relaunch",
     "windowsX64": "Cross-packaged; not executed on Windows",
-    "steamInstallation": "Not tested"
+    "steamInstallation": "Not tested",
+    "testedVersion": "1.4.1",
+    "currentVersionRetested": false
   },
   "androidRelease": {
-    "versionCode": 6,
+    "versionCode": 7,
     "targetSdk": 36,
     "lintErrors": 0,
-    "lintWarnings": 12,
+    "lintWarnings": 11,
     "debugApkSignatureVerified": true,
     "zipAlignment16kbVerified": true,
     "nativeLibraries": 0,
@@ -123,5 +125,19 @@
     "suspensionRopesReachSceneTop": true,
     "oldDuckWordRemoved": true
   },
-  "browserRunNote": "19 passed initially; one menu test interrupted by production-build Vite reload, then passed on isolated rerun."
+  "browserRunNote": "19 passed initially; one menu test interrupted by production-build Vite reload, then passed on isolated rerun.",
+  "browserValidation": "Full 27-test suite plus focused final reruns including the added controller practice test; all 28 distinct tests passed.",
+  "androidCurrentCheck": {
+    "testedVersion": "1.5.0",
+    "installedPackageTested": false,
+    "physicalDeviceAttached": false,
+    "isolatedEmulator": "37.1.11 booted Android 16 ARM64 image r7; ADB connection unavailable/offline; stopped",
+    "remaining": [
+      "Installed offline cold launch",
+      "Native Back/Home/lock lifecycle",
+      "Upgrade and native save retention",
+      "Physical phone/tablet performance and audio",
+      "16 KB runtime"
+    ]
+  }
 }

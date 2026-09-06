@@ -8,7 +8,7 @@ export class BootScene extends Phaser.Scene {
   }
   preload() {
     this.load.on("progress", (progress: number) =>
-      this.game.events.emit("asset-progress", progress),
+      this.game.events.emit("asset-progress", progress * 0.9),
     );
     this.load.on("loaderror", () => {
       this.failed = true;
@@ -22,10 +22,25 @@ export class BootScene extends Phaser.Scene {
       this.game.events.emit("asset-error");
       return;
     }
-    await document.fonts.load('700 48px "Changa Variable"', 'بقالة بو خالد');
-    generateCoreArt(this);
-    prepareArcadeArt(this);
-    this.game.events.emit("assets-ready");
-    this.scene.start("Menu");
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      // Arabic labels are baked into textures, so a failed font must be retryable
+      // before preparing the artwork, rather than silently baking missing glyphs.
+      await Promise.race([
+        document.fonts.load('700 48px "Changa Variable"', 'بقالة بو خالد'),
+        new Promise<never>((_, reject) => {
+          timeout = setTimeout(() => reject(new Error("Font preparation timed out")), 8000);
+        }),
+      ]);
+      generateCoreArt(this);
+      prepareArcadeArt(this);
+      this.game.events.emit("asset-progress", 1);
+      this.game.events.emit("assets-ready");
+      this.scene.start("Menu");
+    } catch {
+      this.game.events.emit("asset-error");
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 }

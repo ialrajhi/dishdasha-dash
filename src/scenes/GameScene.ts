@@ -34,6 +34,7 @@ export interface GameHooks {
   pause: () => void;
   over: (state: Snapshot, deaths: number) => void;
   complete: (result: LevelResult) => void;
+  practice: (step: "jump" | "duck" | "done", retry?: boolean) => void;
 }
 export class GameScene extends Phaser.Scene {
   player!: Player;
@@ -57,13 +58,23 @@ export class GameScene extends Phaser.Scene {
   private debug?: Phaser.GameObjects.Graphics;
   private finalNotice = false;
   private shadow!: Phaser.GameObjects.Ellipse;
+  practiceStep?: "jump" | "duck" | "done";
+  practiceWaiting = false;
+  practiceRetry = false;
   constructor() {
     super("Game");
   }
-  init(data: { level: number; hooks: GameHooks }) {
+  init(data: { level: number; hooks: GameHooks; practice?: boolean }) {
     this.level = LEVELS[data.level - 1];
     this.hooks = data.hooks;
-    this.course = createCourse(this.level);
+    this.practiceStep = data.practice ? "jump" : undefined;
+    this.practiceWaiting = !!data.practice;
+    this.practiceRetry = false;
+    this.course = data.practice ? {
+      length: 1600, checkpoint: 1500, tea: [], gaps: [],
+      hazards: [{ id: "practice-jump", x: 280, kind: "box", moving: false },
+        { id: "practice-duck", x: 700, kind: "awning", moving: false }],
+    } : createCourse(this.level);
     this.score = new ScoreManager();
     this.hearts = 3;
     this.lives = 3;
@@ -120,7 +131,10 @@ export class GameScene extends Phaser.Scene {
       this.keys.clear();
     });
     if (DEV.showHitboxes) this.debug = this.add.graphics().setDepth(100);
-    this.hooks.notice(this.level.intro, 2400);
+    if (this.practiceStep) {
+      this.player.state = "idle";
+      this.hooks.practice(this.practiceStep);
+    } else this.hooks.notice(this.level.intro, 2400);
     this.publish();
   }
   private populate() {
@@ -160,9 +174,11 @@ export class GameScene extends Phaser.Scene {
     this.releaseJump(`canvas:${pointer.id}`);
   }
   pressJump(source = "external") {
+    if (this.practiceStep === "done" || this.practiceStep === "duck" && this.practiceWaiting) return;
     if (this.phase !== "running" || !this.scene.isActive() || this.jumpSources.has(source)) return;
     const first = this.jumpSources.size === 0;
     this.jumpSources.add(source);
+    if (this.practiceWaiting) { this.practiceWaiting = false; this.player.lastGrounded = this.gameTime; }
     if (first) this.player.press(this.gameTime);
   }
   releaseJump(source = "external") {
@@ -170,8 +186,10 @@ export class GameScene extends Phaser.Scene {
     if (!this.jumpSources.size && this.player) this.player.release();
   }
   pressDuck(source = "external") {
+    if (this.practiceStep === "done" || this.practiceStep === "jump" && this.practiceWaiting) return;
     if (this.phase !== "running" || !this.scene.isActive()) return;
     this.duckSources.add(source);
+    if (this.practiceWaiting) this.practiceWaiting = false;
     this.player.duckHeld = true;
     this.player.bufferedAt = -1000;
   }
@@ -250,6 +268,7 @@ export class GameScene extends Phaser.Scene {
     });
   }
   damage(force = false) {
+    if (this.practiceStep) { this.resetPractice(true); return; }
     if (
       this.phase !== "running" ||
       (!force &&
@@ -314,6 +333,7 @@ export class GameScene extends Phaser.Scene {
     this.publish();
   }
   finish() {
+    if (this.practiceStep) return;
     if (this.phase !== "running") return;
     this.phase = "complete";
     this.player.setVelocityX(0);
@@ -359,6 +379,10 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(2100, () => this.hooks.complete(result));
   }
   update(_time: number, delta: number) {
+    if (this.practiceWaiting) {
+      this.player.animate(this.gameTime);
+      return;
+    }
     // One fixed clock owns physics, hazards, pickups and jump eligibility on every display.
     if (delta > 250 && this.phase === "running") { this.requestPause(); return; }
     const step = 1000 / 60;
@@ -370,6 +394,7 @@ export class GameScene extends Phaser.Scene {
       this.physics.world.postUpdate();
       this.tick(step);
       this.stepAccumulator -= step;
+      if (this.practiceWaiting) { this.stepAccumulator = 0; break; }
     }
     const alpha = Phaser.Math.Clamp(this.stepAccumulator / step, 0, 1);
     this.player.present(alpha);
@@ -481,7 +506,7 @@ export class GameScene extends Phaser.Scene {
         this.score.resolved.add(h.spec.id);
         this.damage();
       }
-      if (h.hitbox().right < playerBox.left && !h.hit) this.score.avoid(h.spec.id);
+      if (!this.practiceStep && h.hitbox().right < playerBox.left && !h.hit) this.score.avoid(h.spec.id);
     }
     for (const c of this.collectibles) {
       if (!c.active) continue;
@@ -507,10 +532,34 @@ export class GameScene extends Phaser.Scene {
       this.lastHud = now;
       this.publish();
     }
+    if (this.practiceStep === "jump" && this.player.x >= 580 && grounded) {
+      this.practiceStep = "duck";
+      this.resetPractice(false);
+    } else if (this.practiceStep === "duck" && body.left > this.hazards[1].hitbox().right + 12) {
+      this.practiceStep = "done";
+      this.clearInput();
+      this.player.setVelocity(0, 0);
+      this.player.setDucking(false);
+      this.player.state = "victory";
+      this.practiceWaiting = true;
+      save.tutorial("completed");
+      this.hooks.practice("done");
+    }
     if (this.player.x >= this.course.length) this.finish();
     if (this.debug) {
       this.debug.clear().lineStyle(1, 0xff3344).strokeRectShape(playerBox);
       this.hazards.forEach((h) => this.debug!.strokeRectShape(h.hitbox()));
     }
+  }
+  private resetPractice(retry: boolean) {
+    this.clearInput();
+    this.practiceRetry = retry;
+    this.practiceWaiting = true;
+    this.player.bodyRef.reset(this.practiceStep === "jump" ? 210 : 580, GROUND);
+    this.player.setVelocity(0, 0);
+    this.player.resetVisual();
+    this.player.state = "idle";
+    this.hazards.forEach(h => { h.hit = false; });
+    this.hooks.practice(this.practiceStep!, retry);
   }
 }

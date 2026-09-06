@@ -1,7 +1,7 @@
 {
   "name": "dishdasha-dash",
   "private": true,
-  "version": "1.4.1",
+  "version": "1.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -13,7 +13,10 @@
     "desktop:package": "npm run build && node scripts/package-desktop.mjs",
     "desktop:dev": "electron desktop/main.cjs",
     "test:browser": "playwright test",
-    "assets:native": "node scripts/native-icons.mjs && node scripts/desktop-icons.mjs"
+    "assets:native": "node scripts/native-icons.mjs && node scripts/desktop-icons.mjs",
+    "android:package": "node scripts/package-android.mjs",
+    "android:release": "node scripts/package-android.mjs --signed",
+    "store:prepare": "node scripts/prepare-store.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.1",
