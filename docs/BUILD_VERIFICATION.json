@@ -1,8 +1,8 @@
 {
-  "version": "1.5.0",
+  "version": "1.5.1",
   "checkedDate": "2026-09-06",
-  "unitTests": 26,
-  "browserTests": 28,
+  "unitTests": 32,
+  "browserTests": 31,
   "browserTestsSkipped": 0,
   "androidPhone": {
     "testedAt": "2026-09-05T18:33:22.027Z",
@@ -45,7 +45,7 @@
     "currentVersionRetested": false
   },
   "androidRelease": {
-    "versionCode": 7,
+    "versionCode": 8,
     "targetSdk": 36,
     "lintErrors": 0,
     "lintWarnings": 11,
@@ -60,7 +60,9 @@
     "b8639f76f1f20286f36306b850b5eac50721d88e9e1266dcb99aeb774f9a09bf  Dishdasha-Dash-1.4.1-Windows-x64.zip",
     "4043b82d9661945bdfd358cc4c27b141499ede785fc4638e7ae134a88588d917  Dishdasha-Dash-1.4.1-macOS-arm64.zip",
     "527f5b1a89f270a2a6ede36ed804eaa0b5dda037bfc7791ba286167a90a866ee  android/Dishdasha-Dash-1.4.1-test.apk",
-    "dbed0376008a83c462e89e43baad318cf022c246588c735bb97789c9c00f7b28  android/Dishdasha-Dash-1.4.1-unsigned.aab"
+    "dbed0376008a83c462e89e43baad318cf022c246588c735bb97789c9c00f7b28  android/Dishdasha-Dash-1.4.1-unsigned.aab",
+    "bbb208a788b5269b28f3e0a67fca0146118421205410cb8932586be6ec422e6b  android/Dishdasha-Dash-1.5.1-test.apk",
+    "bbc2316523858c773c8140304a9d4e5070a0b4b3ea9dd5687611874150a7d311  android/Dishdasha-Dash-1.5.1-unsigned.aab"
   ],
   "animationRevision": {
     "heroFrames": 12,
@@ -80,7 +82,14 @@
     ],
     "interpolatedPresentation": true,
     "motionProfile": "MOTION_PROFILE.json",
-    "physicalDeviceRetested": false
+    "physicalDeviceRetested": false,
+    "strideScript": "STRIDE_SYNC.md",
+    "fixedStepStridePhase": true,
+    "boyPositionAndPhaseShareInterpolation": true,
+    "runDuckPhaseContinuity": true,
+    "airborneApexFixed": true,
+    "movingRespawnIdleFixed": true,
+    "artworkContactCalibrationPending": true
   },
   "danceMode": {
     "characters": 12,
@@ -125,10 +134,9 @@
     "suspensionRopesReachSceneTop": true,
     "oldDuckWordRemoved": true
   },
-  "browserRunNote": "19 passed initially; one menu test interrupted by production-build Vite reload, then passed on isolated rerun.",
-  "browserValidation": "Full 27-test suite plus focused final reruns including the added controller practice test; all 28 distinct tests passed.",
+  "browserValidation": "All 31 browser tests passed in one full suite; all five courses completed with zero deaths and zero awning hits.",
   "androidCurrentCheck": {
-    "testedVersion": "1.5.0",
+    "testedVersion": "1.5.1",
     "installedPackageTested": false,
     "physicalDeviceAttached": false,
     "isolatedEmulator": "37.1.11 booted Android 16 ARM64 image r7; ADB connection unavailable/offline; stopped",

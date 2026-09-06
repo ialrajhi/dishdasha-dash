@@ -392,13 +392,14 @@ export class GameScene extends Phaser.Scene {
       this.hazards.forEach(h => h.capturePrevious());
       this.physics.world.update(this.gameTime, step);
       this.physics.world.postUpdate();
+      this.player.syncMovement(step / 1000);
       this.tick(step);
       this.stepAccumulator -= step;
       if (this.practiceWaiting) { this.stepAccumulator = 0; break; }
     }
     const alpha = Phaser.Math.Clamp(this.stepAccumulator / step, 0, 1);
     this.player.present(alpha);
-    this.player.animate(this.gameTime, this.player.visual.x);
+    this.player.animate(this.gameTime);
     for (const hazard of this.hazards) hazard.present(alpha);
     const camera = this.cameras.main;
     camera.stopFollow();
@@ -457,13 +458,9 @@ export class GameScene extends Phaser.Scene {
     this.player.state =
       now < this.player.hurtUntil
         ? "hurt"
-        : now < this.player.invulnerableUntil && this.player.state === "respawn"
-          ? "respawn"
-          : body.velocity.y < -15
-            ? "jump"
-            : !grounded && body.velocity.y > 15
-              ? "fall"
-              : this.player.ducking ? "duck" : "run";
+        : !grounded || body.velocity.y < 0
+          ? body.velocity.y < 0 ? "jump" : "fall"
+          : this.player.ducking ? "duck" : "run";
     if (this.player.y > 365) {
       if (DEV.invincible) {
         this.player.bodyRef.reset(this.player.x + 75, GROUND - 80);
@@ -483,7 +480,7 @@ export class GameScene extends Phaser.Scene {
       body.height,
     );
     for (const h of this.hazards) {
-      h.tick(now, this.player.x, this.level.id);
+      h.tick(now, this.player.x, this.level.id, delta / 1000);
       const distance = h.x - this.player.x;
       if (h.spec.kind === "awning" && distance < 290 && distance > 0 && !h.warned) {
         h.warned = true;

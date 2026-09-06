@@ -1,8 +1,9 @@
 import Phaser from "phaser";
-import { runFrame } from "../utils/runFrame";
+import { StrideAnimator } from "../utils/StrideAnimator";
+import { KID_RUN } from "../config/Locomotion";
 import { GROUND } from "../config/Constants";
 import type { HazardSpec } from "../levels/levels";
-import { propHeight, propTexture, runCycle } from "../utils/ArcadeArt";
+import { propHeight, propTexture } from "../utils/ArcadeArt";
 const sizes: Record<string, [number, number]> = {
   cone: [16, 26],
   cat: [28, 23],
@@ -25,6 +26,7 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
   private originalX: number;
   private artScale = 1;
   private previousX = 0;
+  private gait = new StrideAnimator(KID_RUN);
   private suspension: Phaser.GameObjects.TileSprite[] = [];
   constructor(scene: Phaser.Scene, spec: HazardSpec) {
     super(scene, spec.x, GROUND, propTexture(spec.kind));
@@ -49,13 +51,18 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       }
     }
   }
-  capturePrevious() { this.previousX = this.x; }
+  capturePrevious() {
+    this.previousX = this.x;
+    // Complete/death scenes stop ticking hazards; discard the last moving interpolation.
+    if (this.spec.kind === "kid") this.gait.advance(0, 0);
+  }
   present(alpha: number) {
     if (this.spec.kind !== "kid") return;
     const x = Phaser.Math.Linear(this.previousX, this.x, alpha);
+    this.setTexture(`arcade-kid-stride-${this.gait.frame(alpha)}`);
     this.setDisplayOrigin(this.width / 2 + (this.x - x) / this.artScale, this.height);
   }
-  tick(now: number, playerX: number, level: number) {
+  tick(now: number, playerX: number, level: number, seconds: number) {
     if (
       this.spec.moving &&
       this.x - playerX < 530 &&
@@ -74,8 +81,8 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
         this.y = GROUND - Math.abs(Math.sin(now / 85)) * 2;
     }
     if (this.spec.kind === "kid") {
-      const phase = runFrame(this.originalX - this.x, runCycle.kidStride, runCycle.count);
-      this.setTexture(`arcade-kid-stride-${phase}`).setAngle(0).setScale(this.artScale);
+      this.gait.advance(this.x - this.previousX, seconds);
+      this.setAngle(0).setScale(this.artScale);
       this.y = GROUND;
     }
     if (["dallah", "cat", "goat", "pigeon", "waiter"].includes(this.spec.kind)) {

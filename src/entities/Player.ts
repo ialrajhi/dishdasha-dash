@@ -1,7 +1,8 @@
 import Phaser from "phaser";
-import { runFrame } from "../utils/runFrame";
+import { StrideAnimator } from "../utils/StrideAnimator";
+import { HERO_RUN, HERO_DUCK } from "../config/Locomotion";
 import { save } from "../systems/SaveManager";
-import { HERO_SCALE, heroFrame, runCycle } from "../utils/ArcadeArt";
+import { HERO_SCALE, heroFrame } from "../utils/ArcadeArt";
 export type PlayerState =
   | "idle"
   | "run"
@@ -15,8 +16,9 @@ export type PlayerState =
 export class Player extends Phaser.Physics.Arcade.Sprite {
   state: PlayerState = "run";
   private lastFrame = "";
-  private runDistance = 0;
-  private lastVisualX = 0;
+  private gait = new StrideAnimator(HERO_RUN);
+  private strideState: PlayerState = "run";
+  private visualAlpha = 1;
   private previousX = 0;
   private previousY = 0;
   visual: Phaser.GameObjects.Sprite;
@@ -43,7 +45,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.bodyRef.setSize(19, 58).setOffset(9, -10);
     this.setMaxVelocity(260, 700);
-    this.lastVisualX = x;
     this.capturePrevious();
   }
   get bodyRef() {
@@ -68,13 +69,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.bodyRef.position.y = bottom - this.bodyRef.height;
     this.bodyRef.updateCenter();
   }
-  animate(now: number, visualX = this.x) {
-    const movement = visualX - this.lastVisualX;
-    if ((this.state === "run" || this.state === "duck") && movement > 0 && movement < 80) this.runDistance += movement;
-    this.lastVisualX = visualX;
+  syncMovement(seconds: number) {
+    // The state captured before physics describes the movement just simulated.
+    this.gait.setCycle(this.strideState === "duck" ? HERO_DUCK : HERO_RUN);
+    const grounded = this.bodyRef.blocked.down || this.bodyRef.touching.down;
+    this.gait.advance(this.x - this.previousX, seconds,
+      grounded && (this.strideState === "run" || this.strideState === "duck"));
+  }
+  animate(now: number) {
+    this.gait.setCycle(this.state === "duck" ? HERO_DUCK : HERO_RUN);
     const key = this.state === "run"
-      ? `hero-run-stride-${runFrame(this.runDistance, runCycle.heroStride, runCycle.count)}`
-      : this.state === "duck" ? `hero-duck-${runFrame(this.runDistance, 60, 4)}` : heroFrame(this.state, now);
+      ? `hero-run-stride-${this.gait.frame(this.visualAlpha)}`
+      : this.state === "duck" ? `hero-duck-${this.gait.frame(this.visualAlpha)}` : heroFrame(this.state, now);
     if (key !== this.lastFrame) {
       this.visual.setTexture(key);
       this.lastFrame = key;
@@ -83,9 +89,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       now < this.invulnerableUntil ? (save.data.settings.steadyView || save.data.settings.reducedMotion ? 0.72 : Math.floor(now / 200) % 2 === 0 ? 0.35 : 1) : 1,
     );
   }
-  capturePrevious() { this.previousX = this.x; this.previousY = this.y; }
+  capturePrevious() { this.previousX = this.x; this.previousY = this.y; this.strideState = this.state; }
   present(alpha: number) {
     const snap = Math.abs(this.x - this.previousX) > 80 || Math.abs(this.y - this.previousY) > 80;
+    this.visualAlpha = snap ? 1 : alpha;
     this.visual.setPosition(snap ? this.x : Phaser.Math.Linear(this.previousX, this.x, alpha), (snap ? this.y : Phaser.Math.Linear(this.previousY, this.y, alpha)) + 1);
   }
   land() {
@@ -105,8 +112,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.duckHeld = false;
     this.scene.tweens.killTweensOf(this.visual);
     this.visual.setScale(HERO_SCALE).setAngle(0).clearTint().setAlpha(1);
-    this.lastVisualX = this.x;
-    this.runDistance = 0;
+    this.gait.reset();
     this.capturePrevious();
     this.present(1);
   }

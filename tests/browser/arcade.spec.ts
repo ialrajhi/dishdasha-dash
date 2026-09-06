@@ -21,13 +21,20 @@ test("menu stays still and running uses grounded alternating strides without bra
     const p = s.player;
     p.state = "run";
     p.resetVisual();
-    const hero = Array.from({length:12}, (_, i) => { p.x += 80 / 12; p.animate(i * 100); return p.visual.texture.key; });
+    p.bodyRef.blocked.down = true;
+    const hero = Array.from({length:12}, (_, i) => {
+      p.capturePrevious(); p.x += 80 / 12; p.syncMovement(.1); p.present(1); p.animate(i * 100);
+      return p.visual.texture.key;
+    });
     const stationary = p.visual.texture.key;
     p.animate(9000);
     const kid = s.hazards.find((h: any) => h.spec.kind === "kid");
     const feet: number[] = [];
     kid.motionStart = 0;
-    const boy = Array.from({length:12}, (_, i) => { kid.tick(i * (28 / 12) / 38 * 1000 + 1, kid.x, 2); feet.push(kid.y); return kid.texture.key; });
+    const boy = Array.from({length:12}, (_, i) => {
+      kid.capturePrevious(); kid.tick(i * (28 / 12) / 38 * 1000 + 1, kid.x, 2, (28 / 12) / 38);
+      kid.present(1); feet.push(kid.y); return kid.texture.key;
+    });
     return { hero, stationary, stopped: p.visual.texture.key, boy, feet };
   });
   expect(new Set(gait.hero).size).toBe(12);

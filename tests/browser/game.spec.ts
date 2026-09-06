@@ -73,6 +73,16 @@ test("real obstacle damage, death, checkpoint respawn, and game over", async ({
   await page.waitForTimeout(1400);
   expect(await app(page, "window.__DASH__.snapshot().hearts")).toBe(3);
   expect(await app(page, "window.__DASH__.snapshot().lives")).toBe(2);
+  const returning = await page.evaluate(() => {
+    const s = (window as any).__DASH__.scene(), p = s.player;
+    return { protected: p.invulnerableUntil > s.gameTime, state: p.state,
+      texture: p.visual.texture.key, phase: p.gait.sample(), speed: p.bodyRef.velocity.x };
+  });
+  expect(returning.protected).toBe(true);
+  expect(returning.state).toBe('run');
+  expect(returning.texture).toMatch(/^hero-run-stride-/);
+  expect(returning.phase).toBeGreaterThan(0);
+  expect(returning.speed).toBeGreaterThan(0);
   expect(
     await app(
       page,

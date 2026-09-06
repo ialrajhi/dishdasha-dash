@@ -255,7 +255,7 @@ export class GameUI {
       ?.focus();
   }
   private about() {
-    return `<div class="modal-wrap"><div class="modal about-modal">${this.heading(bilingual("عن اللعبة والخصوصية", "About & privacy"), "DISHDASHA DASH · 1.5.0")}
+    return `<div class="modal-wrap"><div class="modal about-modal">${this.heading(bilingual("عن اللعبة والخصوصية", "About & privacy"), "DISHDASHA DASH · 1.5.1")}
       <div class="privacy-copy"><h2>${bilingual("مغامرة كويتية", "A Kuwaiti adventure")}</h2><p>${bilingual("من الفريج إلى العرس: خمس مراحل، استكانات چاي، ودلة ذهبية بكل مرحلة. القوائم بالإنجليزي افتراضياً، واللافتات وعالم اللعبة بالعربي.", "From the neighborhood to the wedding: five stages, tea to collect, and a golden dallah in each stage. Menus begin in English; the world and street signs stay Arabic.")}</p>
       <h2>${bilingual("خصوصيتك", "Your privacy")}</h2><p>${bilingual("اللعبة ما فيها حسابات أو إعلانات أو مشتريات، وما تجمع أو تشارك معلومات شخصية. التقدم والنتايج والإعدادات تنحفظ على جهازك. ما نستخدم تحليلات أو تتبع داخل اللعبة.", "The game has no accounts, ads, purchases, analytics, or tracking. The game does not collect or share personal data. Progress, scores, and settings are stored on your device.")}</p>
       <p>${bilingual("تقدر تمسح تقدمك من الإعدادات. لمسح كل البيانات، امسح بيانات التطبيق أو بيانات الموقع من جهازك. نسخة التطبيق تشتغل بدون إنترنت. المتصفح يحتاج اتصال لتحميل اللعبة، وتسجيل الدخول للموقع الخاص تديره خدمة الاستضافة.", "Use Reset progress in Options to clear scores and unlocks while keeping your settings. Clear the app’s storage or browser site data to remove everything. Installed builds work offline. The browser version needs a connection to load; private-site sign-in is handled by the hosting service.")}</p>
