@@ -112,8 +112,8 @@ export class GameUI {
       save.data.settings.sfx || save.data.settings.music ? "sound" : "mute",
     );
     document.querySelector("#control-copy")!.textContent = bilingual(
-      "نط · طول الضغطة يطوّل النطة",
-      "JUMP · HOLD TO JUMP HIGHER",
+      "نط · ↓ / S عشان توطّي",
+      "JUMP · ↓ / S HOLD TO DUCK",
     );
     document.querySelector("#pause-copy")!.textContent = t("pause");
     document.querySelector(".portrait-message button")!.textContent =
@@ -222,23 +222,23 @@ export class GameUI {
       ?.focus();
   }
   private about() {
-    return `<div class="modal-wrap"><div class="modal about-modal">${this.heading(bilingual("عن اللعبة والخصوصية", "About & privacy"), "DISHDASHA DASH · 1.3.0")}
+    return `<div class="modal-wrap"><div class="modal about-modal">${this.heading(bilingual("عن اللعبة والخصوصية", "About & privacy"), "DISHDASHA DASH · 1.4.0")}
       <div class="privacy-copy"><h2>${bilingual("مغامرة كويتية", "A Kuwaiti adventure")}</h2><p>${bilingual("من الفريج إلى العرس: خمس مراحل، استكانات چاي، ودلة ذهبية بكل مرحلة. القوائم بالإنجليزي افتراضياً، واللافتات وعالم اللعبة بالعربي.", "From the neighborhood to the wedding: five stages, tea to collect, and a golden dallah in each stage. Menus begin in English; the world and street signs stay Arabic.")}</p>
       <h2>${bilingual("خصوصيتك", "Your privacy")}</h2><p>${bilingual("اللعبة ما فيها حسابات أو إعلانات أو مشتريات، وما تجمع أو تشارك معلومات شخصية. التقدم والنتايج والإعدادات تنحفظ على جهازك. ما نستخدم تحليلات أو تتبع داخل اللعبة.", "The game has no accounts, ads, purchases, analytics, or tracking. The game does not collect or share personal data. Progress, scores, and settings are stored on your device.")}</p>
       <p>${bilingual("تقدر تمسح تقدمك من الإعدادات. لمسح كل البيانات، امسح بيانات التطبيق أو بيانات الموقع من جهازك. نسخة التطبيق تشتغل بدون إنترنت. المتصفح يحتاج اتصال لتحميل اللعبة، وتسجيل الدخول للموقع الخاص تديره خدمة الاستضافة.", "Use Reset progress in Options to clear scores and unlocks while keeping your settings. Clear the app’s storage or browser site data to remove everything. Installed builds work offline. The browser version needs a connection to load; private-site sign-in is handled by the hosting service.")}</p>
-      <h2>${bilingual("طريقة التحكم", "Controls")}</h2><p>${bilingual("نط: زر الشاشة، المس الجهة اليمين، أو Space / ↑ / W. يد التحكم: A أو ✕ للنط والاختيار، B أو ○ للرجوع، وStart للإيقاف. الأسهم أو العصا للتنقل. طول الضغطة يطوّل النطة.", "Jump: the on-screen button, right side of the game, or Space / ↑ / W. Controller: bottom face button (A / ✕) to jump or select, right face button (B / ○) to go back, and Start to pause. Use the D-pad or stick for menus. Hold to jump higher.")}</p>
+      <h2>${bilingual("طريقة التحكم", "Controls")}</h2><p>${bilingual("نط: زر الشاشة، المس الجهة اليمين، أو Space / ↑ / W. يد التحكم: A أو ✕ للنط والاختيار، B أو ○ عشان توطّي باللعب أو ترجع بالقوائم، وStart للإيقاف. الأسهم أو العصا للتنقل. طول الضغطة يطوّل النطة. اضغط مطوّل ↓ / S أو زر وطّي عشان تعدّي تحت المظلة.", "Jump: the on-screen button, right side of the game, or Space / ↑ / W. Controller: bottom face button (A / ✕) to jump or select, right face button (B / ○) to duck while playing or go back in menus, and Start to pause. Use the D-pad or stick for menus. Hold to jump higher. Hold ↓ / S or the Duck button to duck; ducking takes priority over jumping.")}</p>
       <h2>${bilingual("الشكر والتقدير", "Credits")}</h2><p>${bilingual("رسومات أصلية مولدة بالذكاء الاصطناعي ومراجعة للعبة، مع أصوات وموسيقى مولدة برمجياً. مبنية باستخدام Phaser وCapacitor وElectron. الخطوط: Changa وSpace Grotesk.", "Original AI-generated artwork, reviewed and adapted for this game. Music and sound effects are synthesized in code. Built with Phaser, Capacitor, and Electron. Typefaces: Changa and Space Grotesk.")}</p>
       <button class="small-button" data-action="licenses">${bilingual("تراخيص البرامج والخطوط", "Software & font licenses")}</button></div></div></div>`;
   }
   licenseText(text: string) { const el = document.querySelector('#license-copy'); if (el) el.textContent = text; }
   private how() {
-    return `<div class="modal-wrap"><div class="modal how-modal">${this.heading(t("how"), bilingual("يلا شد حيلك!", "One button. A whole Kuwaiti adventure."))}<div class="how-intro">${bilingual("الريّال يركض بروحه. عليك بس تنط!", "He runs automatically. You just jump!")}</div><div class="how-grid"><div><span class="how-icon">${icon("jump")}</span><h2>${bilingual("نطة صغيرة، نطة كبيرة", "A little hop. A big leap.")}</h2><p>${bilingual("اضغط ضغطة خفيفة لنطة صغيرة، أو طول الضغطة عشان تنط أعلى.", "Tap for a short hop. Hold a little longer to jump higher.")}</p><div class="key-row"><kbd>SPACE</kbd><kbd>↑</kbd><kbd>W</kbd><kbd>A / ✕</kbd></div></div><div><span class="how-icon tea-color">${icon("tea")}</span><h2>${bilingual("لا تنسى الچاي", "Don’t forget the tea")}</h2><p>${bilingual("كل استكانة +١٠٠. الدلة الذهبية +٥٠٠٠. جمّع كل الچاي وخذ بونص +٢٠٠٠!", "Each tea is +100. A golden dallah is +5,000. Collect every tea for a +2,000 bonus!")}</p></div><div><span class="how-icon heart-color">${icon("heart")}</span><h2>${bilingual("ثلاث قلوب، ثلاث فرص", "Three hearts. Three lives.")}</h2><p>${bilingual("نط فوق العربانة والدلة! إذا طحت ترد من آخر نقطة وصلت لها.", "Jump over carts and dallahs. If you fall, return to your latest checkpoint.")}</p></div></div><div class="how-bottom"><span>${icon("jump")} ${t("touch")}</span><span><kbd>ESC</kbd> ${t("pause")}</span></div>${button("start", "start", "play", true)}</div></div>`;
+    return `<div class="modal-wrap"><div class="modal how-modal">${this.heading(t("how"), bilingual("يلا شد حيلك!", "Jump high. Stay low."))}<div class="how-intro">${bilingual("الريّال يركض بروحه. نط فوق الحواجز ووطّي تحت المظلات!", "He runs automatically. Jump over street obstacles and hold Duck under hanging awnings!")}</div><div class="how-grid"><div><span class="how-icon">${icon("jump")}</span><h2>${bilingual("نطة صغيرة، نطة كبيرة", "A little hop. A big leap.")}</h2><p>${bilingual("اضغط ضغطة خفيفة لنطة صغيرة، أو طول الضغطة عشان تنط أعلى.", "Tap for a short hop. Hold a little longer to jump higher.")}</p><div class="key-row"><kbd>SPACE</kbd><kbd>↑</kbd><kbd>W</kbd><kbd>A / ✕</kbd></div></div><div><span class="how-icon tea-color">${icon("tea")}</span><h2>${bilingual("لا تنسى الچاي", "Don’t forget the tea")}</h2><p>${bilingual("كل استكانة +١٠٠. الدلة الذهبية +٥٠٠٠. جمّع كل الچاي وخذ بونص +٢٠٠٠!", "Each tea is +100. A golden dallah is +5,000. Collect every tea for a +2,000 bonus!")}</p></div><div><span class="how-icon heart-color">${icon("heart")}</span><h2>${bilingual("ثلاث قلوب، ثلاث فرص", "Three hearts. Three lives.")}</h2><p>${bilingual("نط فوق العربانة والدلة، ووطّي تحت المظلة. إذا طحت ترد من آخر نقطة.", "Jump over carts and dallahs. Hold ↓ / S, the Duck button, or controller B / ○ to pass under awnings. Release to stand. If you fall, return to your latest checkpoint.")}</p></div></div><div class="how-bottom"><span>${icon("jump")} ${t("touch")}</span><span><kbd>ESC</kbd> ${t("pause")}</span></div>${button("start", "start", "play", true)}</div></div>`;
   }
   private high() {
     return `<div class="modal-wrap"><div class="modal high-modal">${this.heading(t("high"), bilingual("أبطال الدشداشة", "Dishdasha hall of fame"))}<div class="big-trophy">${icon("trophy")}</div><strong class="record-number">${number(save.data.best)}</strong><p class="record-label">${t("best")}</p><div class="record-list">${LEVELS.map((l) => `<div><span><i>0${l.id}</i>${save.data.settings.language === "ar" ? l.ar : l.en}</span><b>${number(save.data.levels[l.id]?.score ?? 0)}</b><span class="tea-color">${save.data.levels[l.id]?.golden ? "★" : "☆"}</span></div>`).join("")}</div>${button("start", "start", "play", true)}</div></div>`;
   }
   private playing() {
-    return `<div class="hud"><div class="hud-health"><div id="hearts"></div><div class="health-line"><span class="lives-icon" aria-hidden="true"></span><span id="lives">× 3</span><div class="tea-counter"><span class="tea-art" aria-hidden="true"></span><strong id="tea">0 / 0</strong><span id="golden">☆</span></div></div></div><div class="hud-score"><small>${worldT("score")}</small><strong id="score">0000000</strong></div><div class="hud-right"><div class="hud-level" id="level-label"></div><small class="stage-motto">من الفريج إلى العرس</small></div><button class="pause-button" data-action="pause" aria-label="${worldT("pause")}">${icon("pause")}</button><div class="progress-track"><div id="level-progress"></div></div></div><div class="game-bottom"><span id="level-tip">${worldT("touch")}</span><button id="jump-button" aria-label="${worldT("jump")}">${icon("jump")}<span>${worldT("jump")}</span></button></div>`;
+    return `<div class="hud"><div class="hud-health"><div id="hearts"></div><div class="health-line"><span class="lives-icon" aria-hidden="true"></span><span id="lives">× 3</span><div class="tea-counter"><span class="tea-art" aria-hidden="true"></span><strong id="tea">0 / 0</strong><span id="golden">☆</span></div></div></div><div class="hud-score"><small>${worldT("score")}</small><strong id="score">0000000</strong></div><div class="hud-right"><div class="hud-level" id="level-label"></div><small class="stage-motto">من الفريج إلى العرس</small></div><button class="pause-button" data-action="pause" aria-label="${worldT("pause")}">${icon("pause")}</button><div class="progress-track"><div id="level-progress"></div></div></div><div class="game-bottom"><button id="duck-button" aria-label="${worldT("duck")}"><span class="duck-arrow">↓</span><span>${worldT("duck")}</span></button><span id="level-tip">${worldT("touch")}</span><button id="jump-button" aria-label="${worldT("jump")}">${icon("jump")}<span>${worldT("jump")}</span></button></div>`;
   }
   hud(state: Snapshot) {
     this.lastState = state;
@@ -270,19 +270,19 @@ export class GameUI {
       `${state.progress * 100}%`;
   }
   private bindTouch() {
-    const button = document.querySelector<HTMLButtonElement>("#jump-button")!;
-    button.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      button.setPointerCapture(e.pointerId);
-      this.action("jump-down", `button:${e.pointerId}`);
-    });
-    for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
-      button.addEventListener(type, (e) => {
-        e.preventDefault();
-        this.action("jump-up", `button:${(e as PointerEvent).pointerId}`);
+    for (const control of ["jump", "duck"]) {
+      const button = document.querySelector<HTMLButtonElement>(`#${control}-button`)!;
+      button.addEventListener("pointerdown", (e) => {
+        e.preventDefault(); e.stopPropagation(); button.setPointerCapture(e.pointerId);
+        this.action(`${control}-down`, `${control}-button:${e.pointerId}`);
       });
+      for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
+        button.addEventListener(type, (e) => {
+          e.preventDefault(); this.action(`${control}-up`, `${control}-button:${(e as PointerEvent).pointerId}`);
+        });
+    }
   }
+
   notice(text: string, duration = 1900) {
     window.clearTimeout(this.noticeTimer);
     this.noticeEl.textContent = text;

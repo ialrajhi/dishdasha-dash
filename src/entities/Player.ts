@@ -5,6 +5,7 @@ import { HERO_SCALE, heroFrame, runCycle } from "../utils/ArcadeArt";
 export type PlayerState =
   | "idle"
   | "run"
+  | "duck"
   | "jump"
   | "fall"
   | "hurt"
@@ -22,6 +23,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   lastGrounded = -1000;
   bufferedAt = -1000;
   held = false;
+  duckHeld = false;
+  ducking = false;
   wasGrounded = false;
   invulnerableUntil = 0;
   hurtUntil = 0;
@@ -56,13 +59,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.bodyRef.velocity.y < -140)
       this.setVelocityY(this.bodyRef.velocity.y * 0.48);
   }
+  setDucking(active: boolean) {
+    if (active === this.ducking) return;
+    this.ducking = active;
+    // Both shapes share the same feet. Changing stance must not move the body.
+    const bottom = this.bodyRef.bottom;
+    this.bodyRef.setSize(19, active ? 18 : 39, false).setOffset(9, active ? 30 : 9);
+    this.bodyRef.position.y = bottom - this.bodyRef.height;
+    this.bodyRef.updateCenter();
+  }
   animate(now: number, visualX = this.x) {
     const movement = visualX - this.lastVisualX;
-    if (this.state === "run" && movement > 0 && movement < 80) this.runDistance += movement;
+    if ((this.state === "run" || this.state === "duck") && movement > 0 && movement < 80) this.runDistance += movement;
     this.lastVisualX = visualX;
     const key = this.state === "run"
       ? `hero-run-stride-${runFrame(this.runDistance, runCycle.heroStride, runCycle.count)}`
-      : heroFrame(this.state, now);
+      : this.state === "duck" ? `hero-duck-${runFrame(this.runDistance, 60, 4)}` : heroFrame(this.state, now);
     if (key !== this.lastFrame) {
       this.visual.setTexture(key);
       this.lastFrame = key;
@@ -89,6 +101,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
   resetVisual() {
+    this.setDucking(false);
+    this.duckHeld = false;
     this.scene.tweens.killTweensOf(this.visual);
     this.visual.setScale(HERO_SCALE).setAngle(0).clearTint().setAlpha(1);
     this.lastVisualX = this.x;

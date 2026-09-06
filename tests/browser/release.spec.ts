@@ -107,6 +107,13 @@ test('standard controller navigates, jumps, pauses, and stays paused while backg
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await button(0,true);await button(0,false);
   await expect(page.locator('.view-playing')).toBeVisible();
+  await button(1,true);
+  await page.waitForFunction(()=>(window as any).__DASH__.scene().player.ducking);
+  await expect(page.locator('.view-playing')).toBeVisible();
+  await page.evaluate(()=>(window as any).__DASH__.scene().clearInput());
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(()=>(window as any).__DASH__.scene().player.duckHeld)).toBe(true);
+  await button(1,false);
   await page.evaluate(()=>window.dispatchEvent(new Event('gamepaddisconnected')));
   await expect(page.locator('.view-pause')).toBeVisible();
 });

@@ -9,12 +9,14 @@ test('dance floor supports placement, movement, music, undo, pause and persisten
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await enter(page);
   await expect(page.locator('.dance-empty')).toBeVisible();
+  await expect(page.locator('[data-guest="chef"]')).toHaveCount(0);
+  await expect(page.locator('#dance-move option')).toHaveCount(11);
   const stage = (await page.locator('#dance-canvas').boundingBox())!;
   const hero = (await page.locator('[data-guest="hero"]').boundingBox())!;
   await page.mouse.move(hero.x + hero.width / 2, hero.y + hero.height / 2); await page.mouse.down();
   await page.mouse.move(stage.x + stage.width * .25, stage.y + stage.height * .65, { steps: 12 }); await page.mouse.up();
   await expect(page.locator('.dance-count')).toHaveText('1 / 24');
-  for (const kind of ['woman','boy','girl','cat','dallah','grandpa','chef','robot','alien','drummer','fox']) await page.locator(`[data-guest="${kind}"]`).click();
+  for (const kind of ['woman','boy','girl','cat','dallah','grandpa','abaya','robot','alien','drummer','fox']) await page.locator(`[data-guest="${kind}"]`).click();
   await expect(page.locator('.dance-count')).toHaveText('12 / 24');
   await page.locator('#dance-move').selectOption('twist');
   await page.locator('#dance-copy').click(); await expect(page.locator('.dance-count')).toHaveText('13 / 24');

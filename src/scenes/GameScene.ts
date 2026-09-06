@@ -49,12 +49,14 @@ export class GameScene extends Phaser.Scene {
   gameTime = 0;
   private stepAccumulator = 0;
   private jumpSources = new Set<string>();
+  private duckSources = new Set<string>();
   private world!: WorldRenderer;
   private hooks!: GameHooks;
   private keys = new Set<string>();
   private lastHud = 0;
   private debug?: Phaser.GameObjects.Graphics;
   private finalNotice = false;
+  private duckTaught = false;
   private shadow!: Phaser.GameObjects.Ellipse;
   constructor() {
     super("Game");
@@ -71,9 +73,11 @@ export class GameScene extends Phaser.Scene {
     this.gameTime = 0;
     this.stepAccumulator = 0;
     this.jumpSources.clear();
+    this.duckSources.clear();
     this.keys.clear();
     this.lastHud = 0;
     this.finalNotice = false;
+    this.duckTaught = false;
   }
   create() {
     this.physics.disableUpdate();
@@ -132,6 +136,10 @@ export class GameScene extends Phaser.Scene {
       .map((c) => new Collectible(this, c));
   }
   private keyDown(e: KeyboardEvent) {
+    if (["ArrowDown", "KeyS"].includes(e.code)) {
+      e.preventDefault();
+      if (!this.keys.has(e.code)) { this.keys.add(e.code); this.pressDuck(`key:${e.code}`); }
+    }
     if (["Space", "ArrowUp", "KeyW"].includes(e.code)) {
       e.preventDefault();
       if (!this.keys.has(e.code)) {
@@ -145,6 +153,7 @@ export class GameScene extends Phaser.Scene {
     this.keys.delete(e.code);
     if (["Space", "ArrowUp", "KeyW"].includes(e.code))
       this.releaseJump(`key:${e.code}`);
+    if (["ArrowDown", "KeyS"].includes(e.code)) this.releaseDuck(`key:${e.code}`);
   }
   private pointerDown(pointer: Phaser.Input.Pointer) {
     if (pointer.x > this.cameras.main.width * 0.38) this.pressJump(`canvas:${pointer.id}`);
@@ -162,12 +171,24 @@ export class GameScene extends Phaser.Scene {
     if (!this.jumpSources.delete(source)) return;
     if (!this.jumpSources.size && this.player) this.player.release();
   }
+  pressDuck(source = "external") {
+    if (this.phase !== "running" || !this.scene.isActive()) return;
+    this.duckSources.add(source);
+    this.player.duckHeld = true;
+    this.player.bufferedAt = -1000;
+  }
+  releaseDuck(source = "external") {
+    this.duckSources.delete(source);
+    if (this.player) this.player.duckHeld = this.duckSources.size > 0;
+  }
   clearInput() {
     this.keys.clear();
     this.jumpSources.clear();
+    this.duckSources.clear();
     if (this.player) {
       this.player.held = false;
       this.player.bufferedAt = -1000;
+      this.player.duckHeld = false;
     }
   }
   requestPause() {
@@ -376,6 +397,10 @@ export class GameScene extends Phaser.Scene {
     }
     const body = this.player.bodyRef;
     const grounded = (body.blocked.down || body.touching.down) && body.velocity.y >= 0;
+    // Keep a crouch until the trailing edge clears, including after pause/resume.
+    const underAwning = this.player.ducking && this.hazards.some(h => h.spec.kind === "awning" &&
+      h.hitbox().right > body.left && h.hitbox().left < body.right);
+    this.player.setDucking(grounded && (this.player.duckHeld || underAwning));
     if (grounded) {
       this.player.lastGrounded = now;
       if (!this.player.wasGrounded) {
@@ -385,7 +410,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
     if (
-      now - this.player.bufferedAt <= 140 &&
+      !this.player.ducking && !this.player.duckHeld && now - this.player.bufferedAt <= 140 &&
       now - this.player.lastGrounded <= 110
     ) {
       this.player.setVelocityY(-430);
@@ -395,6 +420,7 @@ export class GameScene extends Phaser.Scene {
       audio.play("jump");
     }
     this.player.wasGrounded = grounded;
+    if (this.player.duckHeld || this.player.ducking) this.player.bufferedAt = -1000;
     body.setGravityY(!this.player.held && body.velocity.y < 0 ? 450 : 0);
     const finalSprint =
       this.level.id === 5 &&
@@ -414,7 +440,7 @@ export class GameScene extends Phaser.Scene {
             ? "jump"
             : !grounded && body.velocity.y > 15
               ? "fall"
-              : "run";
+              : this.player.ducking ? "duck" : "run";
     if (this.player.y > 365) {
       if (DEV.invincible) {
         this.player.bodyRef.reset(this.player.x + 75, GROUND - 80);
@@ -436,6 +462,10 @@ export class GameScene extends Phaser.Scene {
     for (const h of this.hazards) {
       h.tick(now, this.player.x, this.level.id);
       const distance = h.x - this.player.x;
+      if (h.spec.kind === "awning" && distance < 290 && distance > 0 && !h.warned) {
+        h.warned = true;
+        if (!this.duckTaught) { this.duckTaught = true; this.hooks.notice("وطّي راسك! اضغط مطوّل ↓", 1900); }
+      }
       if (distance < 320 && distance > 0 && !h.warned && h.spec.moving) {
         h.warned = true;
         if (h.spec.kind === "dallah" || h.spec.kind === "cart")
@@ -454,7 +484,7 @@ export class GameScene extends Phaser.Scene {
         this.score.resolved.add(h.spec.id);
         this.damage();
       }
-      if (distance < -35 && !h.hit) this.score.avoid(h.spec.id);
+      if (h.hitbox().right < playerBox.left && !h.hit) this.score.avoid(h.spec.id);
     }
     for (const c of this.collectibles) {
       if (!c.active) continue;

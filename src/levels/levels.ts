@@ -21,7 +21,8 @@ export type ObstacleKind =
   | "waiter"
   | "flowers"
   | "rope"
-  | "dune";
+  | "dune"
+  | "awning";
 export interface LevelConfig {
   id: number;
   ar: string;
@@ -154,7 +155,9 @@ export function createCourse(level: LevelConfig): Course {
   const tea: TeaSpec[] = [];
   const spacing = level.id === 1 ? 470 : level.id === 2 ? 430 : 410;
   for (let x = 850, i = 0; x < length - 550; x += spacing + (i % 3) * 42, i++) {
-    const kind = level.obstacles[i % level.obstacles.length];
+    // Teach one overhead obstacle after two jumps, then mix the two actions.
+    const overhead = i % (level.id < 3 ? 4 : 3) === 2;
+    const kind: ObstacleKind = overhead ? "awning" : level.obstacles[i % level.obstacles.length];
     const moving = [
       "dallah",
       "cart",
@@ -176,7 +179,7 @@ export function createCourse(level: LevelConfig): Course {
       tea.push({
         id: `t${i}-${j}`,
         x: teaCenter - 45 + j * 45,
-        y: j === 1 ? 213 : 242,
+        y: overhead ? 289 : j === 1 ? 213 : 242,
       });
   }
   // A safe opening trail teaches collection before the first obstacle.

@@ -39,6 +39,7 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       this.artScale = (propHeight[spec.kind] ?? 36) / this.height;
       this.setScale(this.artScale);
       if (spec.kind === "ball") this.setOrigin(0.5).setY(GROUND - this.displayHeight / 2);
+      if (spec.kind === "awning") this.setDisplaySize(126, 150).setY(GROUND - 34);
     }
   }
   capturePrevious() { this.previousX = this.x; }
@@ -85,6 +86,7 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
     else if (this.spec.kind === "bag" && this.x - playerX <= 330) this.y = GROUND;
   }
   hitbox() {
+    if (this.spec.kind === "awning") return new Phaser.Geom.Rectangle(this.x - 49, GROUND - 184, 98, 150);
     const [w, h] = sizes[this.spec.kind] ?? [27, 25];
     const bottom = this.spec.kind === "ball" ? this.y + this.displayHeight / 2 : this.y;
     return new Phaser.Geom.Rectangle(this.x - w / 2, bottom - h, w, h);

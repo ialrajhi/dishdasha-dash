@@ -1,0 +1,80 @@
+{
+  "mode": "builtin-imagegen",
+  "duck": {
+    "path": "/private/tmp/dash-duck-art/hero-duck4-sheet.png",
+    "width": 1774,
+    "height": 887,
+    "frames": [
+      {
+        "index": 0,
+        "cell": {
+          "left": 0,
+          "top": 0,
+          "width": 444,
+          "height": 887
+        },
+        "visibleBoundsAlpha128": {
+          "left": 91,
+          "top": 320,
+          "width": 303,
+          "height": 262
+        },
+        "bottomBaseline": 581
+      },
+      {
+        "index": 1,
+        "cell": {
+          "left": 444,
+          "top": 0,
+          "width": 443,
+          "height": 887
+        },
+        "visibleBoundsAlpha128": {
+          "left": 509,
+          "top": 320,
+          "width": 309,
+          "height": 265
+        },
+        "bottomBaseline": 584
+      },
+      {
+        "index": 2,
+        "cell": {
+          "left": 887,
+          "top": 0,
+          "width": 444,
+          "height": 887
+        },
+        "visibleBoundsAlpha128": {
+          "left": 895,
+          "top": 326,
+          "width": 365,
+          "height": 261
+        },
+        "bottomBaseline": 586
+      },
+      {
+        "index": 3,
+        "cell": {
+          "left": 1331,
+          "top": 0,
+          "width": 443,
+          "height": 887
+        },
+        "visibleBoundsAlpha128": {
+          "left": 1380,
+          "top": 323,
+          "width": 308,
+          "height": 262
+        },
+        "bottomBaseline": 584
+      }
+    ]
+  },
+  "awning": {
+    "path": "/private/tmp/dash-duck-art/hanging-awning.png",
+    "width": 1536,
+    "height": 1024
+  },
+  "verification": "Both RGBA. Inspected flattened on teal background; no background residue. Artwork alpha is mostly 253–254 from ImageGen; outside silhouettes alpha 0. Original files preserved."
+}

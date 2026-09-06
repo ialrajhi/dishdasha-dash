@@ -143,7 +143,7 @@ function action(name: string, value?: string) {
     return;
   }
   if (!assetsReady) return;
-  if (!["jump-down", "jump-up", "volume"].includes(name)) {
+  if (!["jump-down", "jump-up", "duck-down", "duck-up", "volume"].includes(name)) {
     audio.unlock();
     audio.play("select");
   }
@@ -215,6 +215,12 @@ function action(name: string, value?: string) {
       break;
     case "jump-up":
       scene().releaseJump(value ?? "button");
+      break;
+    case "duck-down":
+      scene().pressDuck(value ?? "button");
+      break;
+    case "duck-up":
+      scene().releaseDuck(value ?? "button");
       break;
     case "music":
     case "sfx":

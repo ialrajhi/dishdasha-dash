@@ -101,6 +101,13 @@ describe("complete and fair courses", () => {
       expect(c.length / l.speed).toBeLessThanOrEqual(90);
       expect(c.tea.filter((t) => t.golden)).toHaveLength(1);
       expect(c.hazards.length).toBeGreaterThan(15);
+      expect(c.hazards[0].kind).not.toBe('awning');
+      expect(c.hazards[1].kind).not.toBe('awning');
+      expect(c.hazards[2].kind).toBe('awning');
+      for (const h of c.hazards.filter(h => h.kind === 'awning')) {
+        expect(h.moving).toBe(false);
+        expect(c.tea.filter(t => t.id.startsWith('t'+h.id.slice(1)+'-')).every(t=>t.y===289)).toBe(true);
+      }
       expect(c.checkpoint / c.length).toBeGreaterThan(0.45);
       expect(c.checkpoint / c.length).toBeLessThan(0.58);
       const ids = c.tea.map((t) => t.id);

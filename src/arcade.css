@@ -451,7 +451,7 @@ body {
   border-radius: 3px;
   font-size: 1.05cqw;
 }
-#jump-button {
+:is(#jump-button, #duck-button) {
   width: 6.5cqw;
   height: 6.5cqw;
   min-width: 54px;
@@ -468,11 +468,11 @@ body {
   font-size: 1.1cqw;
   text-shadow: 1px 2px #684124;
 }
-#jump-button svg {
+:is(#jump-button, #duck-button) svg {
   width: 2.1cqw;
   height: 2.1cqw;
 }
-#jump-button:active {
+:is(#jump-button, #duck-button):active {
   background: #ffe27a;
   box-shadow: 0 0.1cqw #111b2bbb;
 }
@@ -613,14 +613,14 @@ body {
   .hud {
     padding-top: 1cqw;
   }
-  #jump-button {
+  :is(#jump-button, #duck-button) {
     width: 8.5cqw;
     height: 8.5cqw;
     min-width: 56px;
     min-height: 56px;
     font-size: 1.5cqw;
   }
-  #jump-button svg {
+  :is(#jump-button, #duck-button) svg {
     width: 2.6cqw;
     height: 2.6cqw;
   }
@@ -752,12 +752,12 @@ body {
     left: 3%;
     width: 94%;
   }
-  #jump-button {
+  :is(#jump-button, #duck-button) {
     min-width: 44px;
     min-height: 44px;
     font-size: 10px;
   }
-  #jump-button svg {
+  :is(#jump-button, #duck-button) svg {
     width: 16px;
     height: 16px;
   }
@@ -912,8 +912,8 @@ body {
   .pause-button svg { width:20px; height:20px; }
   .hud { grid-template-columns:16% 25% 21% 27% 44px; gap:.5%; padding-right:12px; }
   .tea-counter, .hud-score small, .hud-level { font-size:12px; }
-  #jump-button { min-width:64px; min-height:64px; font-size:14px; }
-  #jump-button svg { width:24px; height:24px; }
+  :is(#jump-button, #duck-button) { min-width:64px; min-height:64px; font-size:14px; }
+  :is(#jump-button, #duck-button) svg { width:24px; height:24px; }
 }
 @media (max-height:500px) and (orientation:landscape) {
   .menu-copy { top:3%; width:37%; }
@@ -993,3 +993,10 @@ body {
 @media (orientation:portrait) {
   .hud { grid-template-columns:31% 23% minmax(0,1fr) 44px; gap:1%; }
 }
+
+#duck-button { display:flex;align-items:center;justify-content:center;font-weight:700;user-select:none;touch-action:none;background:radial-gradient(circle at 40% 28%,#63c1ccee,#267081ee);text-shadow:1px 2px #204d60; }
+#duck-button .duck-arrow { font-size:28px;line-height:1; }
+#duck-button:active { background:#75d1de; }
+.game-bottom { gap:12px;pointer-events:none; }
+.game-bottom button { pointer-events:auto; }
+.game-bottom > span { margin-inline:auto;text-align:center; }

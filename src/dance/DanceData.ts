@@ -1,9 +1,14 @@
 export const CAST = [
   ['hero', 'Bu Dash', 'بو داش'], ['woman', 'Noura', 'نورة'], ['boy', 'Hamad', 'حمد'], ['girl', 'Dana', 'دانة'],
-  ['cat', 'Mishmish', 'مشمش'], ['dallah', 'Disco Dallah', 'دلة الديسكو'], ['grandpa', 'Yousef', 'يوسف'], ['chef', 'Chef Hessa', 'الشيف حصة'],
+  ['cat', 'Mishmish', 'مشمش'], ['dallah', 'Disco Dallah', 'دلة الديسكو'], ['grandpa', 'Yousef', 'يوسف'], ['abaya', 'Maryam', 'مريم'],
   ['robot', 'Bleep', 'بيب'], ['alien', 'Lulu', 'لولو'], ['drummer', 'Salem', 'سالم'], ['fox', 'Fennec', 'فنك'],
 ] as const;
-export const DANCES = [['sway', 'Sway', 'تمايل'], ['shuffle', 'Shuffle', 'خطوة يمين ويسار'], ['bounce', 'Bounce', 'نطنطة'], ['hands', 'Hands up', 'إيدك فوق'], ['twist', 'Twist', 'لفّة']] as const;
+export const DANCES = [
+  ['sway', 'Sway', 'تمايل'], ['shuffle', 'Chest shuffle', 'خطوات خفيفة'], ['bounce', 'Bounce', 'نطنطة'],
+  ['hands', 'Hands up', 'إيدك فوق'], ['twist', 'Low shimmy', 'هزّة خفيفة'], ['disco', 'Disco knees', 'ديسكو'],
+  ['crossstep', 'Cross-step', 'خطوة متقاطعة'], ['sweep', 'Side sweep', 'لوّح بإيدك'], ['clap', 'Overhead clap', 'تصفيق'],
+  ['robot', 'Robot groove', 'رقصة الروبوت'], ['kick', 'Toe-kick swing', 'ركلة خفيفة'],
+] as const;
 export type Dancer = { id: number; kind: string; x: number; y: number; dance: string; flip: boolean };
 export type Party = { dancers: Dancer[]; track: number; calm: boolean };
 export const emptyParty = (): Party => ({ dancers: [], track: 0, calm: true });

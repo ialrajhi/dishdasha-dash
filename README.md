@@ -53,12 +53,13 @@ After building the final web assets and Android APK, `node scripts/prepare-site-
 | Run          | Automatic                      | Automatic                             |
 | Jump         | Space, Up, W                   | Right side of the game or JUMP button |
 | Jump higher  | Hold the jump key              | Hold the touch                        |
+| Duck         | Hold Down or S                 | Hold the Duck / وطّي button            |
 | Pause/resume | Esc                            | Pause button / Resume                 |
 | Menus        | Tab or arrow keys, Enter/Space | Tap a button                          |
 
-Standard controllers use the bottom face button (A / ✕) for Jump/Select, the right face button (B / ○) for Back, Start for Pause, and the D-pad or left stick for menus. Physical controller and Steam Input certification remain release tests. Options includes Reduce effects, privacy/credits, licenses, and desktop Quit.
+Standard controllers use the bottom face button (A / ✕) for Jump/Select, the right face button (B / ○) for Duck while playing or Back in menus, Start for Pause, and the D-pad or left stick for menus. Physical controller and Steam Input certification remain release tests. Options includes Reduce effects, privacy/credits, licenses, and desktop Quit.
 
-One jump only. Jump buffering is 140 ms; coyote time is 110 ms. Releasing jump early cuts upward speed. Each stage begins with 3 hearts and 3 lives. Damage has 1.2 seconds of invulnerability. Death costs one life and respawns at the start or the invisible midpoint checkpoint, restoring hearts. Collected items and awarded obstacle points are retained to prevent farming by respawning.
+One jump at a time; no double jump. Hold Duck to pass under hanging awnings. Ducking blocks jump buffering and keeps the character low until the trailing edge clears, including after pause/resume. Jump buffering is 140 ms; coyote time is 110 ms. Releasing jump early cuts upward speed. Each stage begins with 3 hearts and 3 lives. Damage has 1.2 seconds of invulnerability. Death costs one life and respawns at the start or the invisible midpoint checkpoint, restoring hearts. Collected items and awarded obstacle points are retained to prevent farming by respawning.
 
 Three lives means three total attempts. With zero lives, Retry begins a fresh attempt at that stage. Escape and focus loss pause gameplay, physics, enemy movement, and game timers; returning to the browser leaves a paused run for you to resume.
 
@@ -204,3 +205,7 @@ Phaser documentation: https://docs.phaser.io/phaser/concepts/physics/arcade
 Release-specific regression tests cover fixed simulation at 15/30/60/120/144 fps, mixed-input release, pause velocity, finish landing, reset ordering, native recovery, controller background gating, phone/tablet targets, and local license navigation. See `scripts/check-android.mjs` and `scripts/check-desktop.mjs` for isolated installed-build smoke tests. Native smoke tests use an Android emulator through ADB and a separate desktop profile.
 
 [Artwork provenance](docs/ART_PROVENANCE.md) · [Privacy draft requiring publisher details](docs/PRIVACY_POLICY_DRAFT.md)
+
+## Go Dance
+
+Twelve original characters use continuously animated body/limb rigs with eleven moves and six original music tracks. Drag or tap guests to place them, then select a move. The boy has uncovered hair; Maryam in a black abaya replaces the removed chef. Saved parties retain valid guests and moves. `node scripts/prepare-dance-art.mjs` rebuilds the current rig atlases; source art and prompts are retained under `art/source/`.

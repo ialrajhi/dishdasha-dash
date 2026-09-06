@@ -1,16 +1,17 @@
 import { CAST, DANCES, readParty, type Dancer, type Party } from './DanceData';
+import { DanceRig } from './DanceRig';
 import { DanceMusic, TRACKS } from './DanceMusic';
 import { save } from '../systems/SaveManager';
 import { bilingual as bi } from '../systems/LocalizationManager';
 
-const art = (kind: string) => `${import.meta.env.BASE_URL}assets/dance/${kind}.webp`;
+const art = (kind: string) => `${import.meta.env.BASE_URL}assets/dance/rig-${kind}.webp`;
 export function danceMarkup() {
   return `<section class="dance-room" aria-label="Go Dance">
     <header class="dance-header"><button class="back-button" data-action="back" aria-label="Back to menu">←</button><div><h1>GO DANCE <span lang="ar">يلا نرقص</span></h1><p>${bi('حط شخصياتك وخلّ الحفلة تبدأ', 'Your little corner of chaos.')}</p></div><span class="dance-count">0 / 24</span></header>
     <div class="dance-toolbar"><label>${bi('الموسيقى', 'Track')} <select id="dance-track">${TRACKS.map((t, i) => `<option value="${i}">${i + 1}. ${bi(t.ar, t.name)} · ${t.bpm} BPM</option>`).join('')}</select></label><button id="dance-play" aria-pressed="true">Ⅱ ${bi('وقف الحفلة', 'Pause party')}</button><button id="dance-sound" aria-pressed="${save.data.settings.music}">${bi('الموسيقى', 'Music')}: ${save.data.settings.music ? 'On' : 'Off'}</button><button id="dance-calm" aria-pressed="true">${bi('حركة هادية', 'Gentle moves')}: On</button></div>
     <div class="dance-stage"><canvas id="dance-canvas" tabindex="0" aria-label="Dance floor. Select a character, then drag to move. Arrow keys move the selected dancer; Delete removes it."></canvas><div class="dance-empty"><span>✦</span><h2>${bi('الحفلة تنطرك', 'The floor is yours')}</h2><p>${bi('اسحب شخصية من تحت وحطها هني', 'Drag someone up here. Let the silliness begin.')}</p></div><div class="dance-stage-label" lang="ar">ليلة في الفريج</div><div class="dance-status" role="status" aria-live="polite"></div><button id="dance-retry" hidden>${bi('حمّل الشخصيات مرة ثانية', 'Retry character artwork')}</button></div>
     <div class="dance-editor"><strong id="dance-selected">${bi('اختار شخصية', 'Pick a dancer')}</strong><label>${bi('الرقصة', 'Move')} <select id="dance-move" disabled>${DANCES.map(d => `<option value="${d[0]}">${bi(d[2], d[1])}</option>`).join('')}</select></label><button id="dance-flip" disabled>↔ ${bi('اقلب', 'Flip')}</button><button id="dance-copy" disabled>＋ ${bi('نسخة', 'Clone')}</button><button id="dance-remove" disabled>− ${bi('شيل', 'Remove')}</button><button id="dance-clear">${bi('فضّي المكان', 'Clear floor')}</button><button id="dance-undo" disabled>↶ ${bi('تراجع', 'Undo')}</button></div>
-    <footer class="dance-cast"><div class="dance-cast-heading"><strong>${bi('الشلة', 'THE GUEST LIST')}</strong><span>${bi('اسحب أو اضغط للإضافة · تنحفظ على جهازك', 'Drag or tap to add · Saved on this device')}</span></div><div class="dance-roster">${CAST.map(c => `<button class="dance-guest" data-guest="${c[0]}" disabled aria-label="Add ${c[1]}"><span class="dance-portrait" style="background-image:url('${art(c[0])}')"></span><span>${bi(c[2], c[1])}</span></button>`).join('')}</div></footer>
+    <footer class="dance-cast"><div class="dance-cast-heading"><strong>${bi('الشلة', 'THE GUEST LIST')}</strong><span>${bi('اسحب أو اضغط للإضافة · تنحفظ على جهازك', 'Drag or tap to add · Saved on this device')}</span></div><div class="dance-roster">${CAST.map(c => `<button class="dance-guest" data-guest="${c[0]}" disabled aria-label="Add ${c[1]}"><span class="dance-portrait"></span><span>${bi(c[2], c[1])}</span></button>`).join('')}</div></footer>
   </section>`;
 }
 export class DanceRoom {
@@ -23,6 +24,7 @@ export class DanceRoom {
   private ctx: CanvasRenderingContext2D;
   private music = new DanceMusic();
   private images = new Map<string, HTMLImageElement>();
+  private rigs = new Map<string, DanceRig>();
   private abort = new AbortController();
   private raf = 0;
   private elapsed = 0;
@@ -52,7 +54,13 @@ export class DanceRoom {
     const results = await Promise.allSettled(CAST.map(async c => {
       if (this.images.has(c[0])) return;
       const img = new Image(); img.src = art(c[0]); await img.decode();
-      if (!this.destroyed) { this.images.set(c[0], img); (this.root.querySelector(`[data-guest="${c[0]}"]`) as HTMLButtonElement).disabled = false; }
+      if (!this.destroyed) { this.images.set(c[0], img);
+        const rig = new DanceRig(img); this.rigs.set(c[0], rig);
+        const portrait = document.createElement('canvas'); portrait.width = 192; portrait.height = 192;
+        const pc = portrait.getContext('2d')!; pc.translate(96,184); pc.scale(165,165); rig.draw(pc,c[0],'sway',0,true,true);
+        const el = this.root.querySelector(`[data-guest="${c[0]}"] .dance-portrait`) as HTMLElement;
+        el.style.backgroundImage = `url('${portrait.toDataURL()}')`;
+        (this.root.querySelector(`[data-guest="${c[0]}"]`) as HTMLButtonElement).disabled = false; }
     }));
     if (this.destroyed) return;
     const failed = results.some(r => r.status === 'rejected');
@@ -173,22 +181,17 @@ export class DanceRoom {
     const beat = this.elapsed / (60000 / TRACKS[this.party.track].bpm), size = this.size();
     for (const d of [...this.party.dancers].sort((a, b) => a.y - b.y || a.id - b.id)) {
       const img = this.images.get(d.kind); if (!img) continue;
-      const phase = beat + d.id * .17, wave = Math.sin(phase * Math.PI * 2), gentle = this.party.calm || save.data.settings.reducedMotion;
-      const sequence = d.dance === 'hands' ? [1, 1, 2, 1] : d.dance === 'shuffle' ? [0, 2, 1, 2] : [0, 1, 2, 1];
-      const frame = sequence[Math.floor(phase * (gentle ? 1 : 2)) % 4];
+      const phase = beat + d.id * .17, gentle = this.party.calm || save.data.settings.reducedMotion;
       const moving = this.drag?.dancer === d.id;
-      const dx = !moving && !gentle && d.dance === 'shuffle' ? wave * size * .04 : 0;
-      const bounce = !moving ? Math.abs(wave) * size * (d.dance === 'bounce' ? (gentle ? .025 : .08) : .008) : 0;
-      const rotation = moving ? 0 : wave * (gentle ? .012 : d.dance === 'twist' ? .12 : .035);
       const x = d.x * w, y = d.y * h;
       c.save(); c.fillStyle = '#07171970'; c.beginPath(); c.ellipse(x, y, size * .22, size * .04, 0, 0, Math.PI * 2); c.fill();
       if (this.selected === d.id) { c.strokeStyle = '#ffd478'; c.lineWidth = Math.max(2, w / 500); c.beginPath(); c.ellipse(x, y, size * .3, size * .055, 0, 0, Math.PI * 2); c.stroke(); }
-      c.translate(x + dx, y - bounce); c.rotate(rotation); c.scale(d.flip ? -1 : 1, 1);
-      c.drawImage(img, frame * 192, 0, 192, 192, -size / 2, -size, size, size); c.restore();
+      c.translate(x,y); c.scale((d.flip ? -1 : 1) * size,size);
+      this.rigs.get(d.kind)?.draw(c,d.kind,d.dance,phase,gentle,moving); c.restore();
     }
     if (this.drag?.guest) {
       const img = this.images.get(this.drag.guest), rect = this.canvas.getBoundingClientRect();
-      if (img) { c.globalAlpha = .65; c.drawImage(img, 0, 0, 192, 192, (this.drag.x - rect.left) / rect.width * w - size / 2, (this.drag.y - rect.top) / rect.height * h - size, size, size); c.globalAlpha = 1; }
+      if (img) { c.save(); c.globalAlpha = .65; c.translate((this.drag.x-rect.left)/rect.width*w,(this.drag.y-rect.top)/rect.height*h); c.scale(size,size); this.rigs.get(this.drag.guest)?.draw(c,this.drag.guest,'sway',0,true,true); c.restore(); }
     }
   }
   destroy() { this.destroyed = true; this.cancel(); cancelAnimationFrame(this.raf); this.abort.abort(); this.observer.disconnect(); this.music.destroy(); }

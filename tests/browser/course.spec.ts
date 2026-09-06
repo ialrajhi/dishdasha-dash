@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-test("plays every full-length course with normal physics and jump input", async ({
+test("plays every full-length course with normal physics, jumping and ducking", async ({
   page,
 }) => {
   test.setTimeout(180000);
@@ -32,7 +32,7 @@ test("plays every full-length course with normal physics and jump input", async 
           const targets = [
             ...s.hazards
               .filter((h: any) => !h.hit && h.x >= p.x - 15)
-              .map((h: any) => ({ x: h.x, kind: "obstacle" })),
+              .map((h: any) => ({ x: h.x, kind: h.spec.kind === "awning" ? "duck" : "obstacle" })),
             ...s.course.gaps
               .filter((g: any) => g.x + g.width >= p.x)
               .map((g: any) => ({ x: g.x + 20, kind: "gap" })),
@@ -41,8 +41,10 @@ test("plays every full-length course with normal physics and jump input", async 
               .map((c: any) => ({ x: c.x, kind: "gold" })),
           ];
           const next = targets.sort((a: any, b: any) => a.x - b.x)[0];
+          const overhead = s.hazards.find((h: any) => h.spec.kind === 'awning' && h.hitbox().right > p.bodyRef.left && h.x - p.x < 125);
+          if (overhead) s.pressDuck('bot'); else s.releaseDuck('bot');
           if (
-            grounded &&
+            !overhead && next?.kind !== 'duck' && grounded &&
             next &&
             next.x - p.x < speed * 0.37 + 12 &&
             next.x - p.x > 0
@@ -66,6 +68,7 @@ test("plays every full-length course with normal physics and jump input", async 
         hearts: s.hearts,
         lives: s.lives,
         deaths: s.score.deaths,
+        overheadHits: s.hazards.filter((h:any) => h.spec.kind === "awning" && h.hit).length,
         frames,
         highest,
         distance: s.player.x,
@@ -84,6 +87,7 @@ test("plays every full-length course with normal physics and jump input", async 
     expect(r.tea).toBeGreaterThan(10);
     expect(r.highest).toBeLessThan(230);
     expect(r.deaths).toBeLessThan(3);
+    expect(r.overheadHits).toBe(0);
   }
   await page.screenshot({ path: "test-results/full-playthrough-victory.png" });
 });

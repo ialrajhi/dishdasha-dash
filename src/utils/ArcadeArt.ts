@@ -11,8 +11,9 @@ export const floorY = sceneryLayout.floorY;
 export function preloadArcadeArt(scene: Phaser.Scene) {
   for (const level of LEVELS)
     scene.load.image(`scene-${level.id}`, `${import.meta.env.BASE_URL}assets/arcade/${level.theme}.webp`);
-  for (const key of ["hero-sheet", "props-sheet", "extra-sheet", "hero-run-sheet", "kid-run-sheet"])
+  for (const key of ["hero-sheet", "props-sheet", "extra-sheet", "hero-run-sheet", "kid-run-sheet", "hero-duck-sheet"])
     scene.load.image(key, `${import.meta.env.BASE_URL}assets/arcade/${key}.webp`);
+  scene.load.image("arcade-awning", `${import.meta.env.BASE_URL}assets/arcade/awning.webp`);
 }
 
 function crop(
@@ -140,6 +141,21 @@ function loopTexture(
   scene.textures.addCanvas(key, canvas);
 }
 export function prepareArcadeArt(scene: Phaser.Scene) {
+  const awningSource = scene.textures.get("arcade-awning").getSourceImage() as HTMLImageElement;
+  const sign = document.createElement("canvas"); sign.width = awningSource.width; sign.height = awningSource.height;
+  const sc = sign.getContext("2d")!; sc.drawImage(awningSource, 0, 0);
+  sc.font = `700 ${Math.round(sign.width * .17)}px "Changa Variable", sans-serif`;
+  sc.textAlign = "center"; sc.textBaseline = "middle"; sc.direction = "rtl";
+  sc.fillStyle = "#fff0b7"; sc.strokeStyle = "#492818"; sc.lineWidth = 7;
+  sc.strokeText("وطّي ↓", sign.width / 2, sign.height * .61);
+  sc.fillText("وطّي ↓", sign.width / 2, sign.height * .61);
+  scene.textures.remove("arcade-awning"); scene.textures.addCanvas("arcade-awning", sign);
+  const duck = scene.textures.get("hero-duck-sheet").getSourceImage() as HTMLImageElement;
+  for (let i = 0; i < 4; i++) {
+    const canvas = document.createElement("canvas"); canvas.width = 384; canvas.height = 320;
+    canvas.getContext("2d")!.drawImage(duck, i * 384, 0, 384, 320, 0, 0, 384, 320);
+    scene.textures.addCanvas(`hero-duck-${i}`, canvas);
+  }
   for (const [name, bounds] of Object.entries(frames.hero))
     if (!name.startsWith("run")) crop(scene, "hero-sheet", `hero-${name}`, bounds, true);
   for (const actor of ["hero", "kid"]) {
@@ -207,7 +223,7 @@ export function prepareArcadeArt(scene: Phaser.Scene) {
     loopTexture(scene, `street-${level.id}`, canvas, 64);
     scene.textures.remove(`scene-${level.id}`);
   }
-  for (const sheet of ["hero-sheet", "props-sheet", "extra-sheet", "hero-run-sheet", "kid-run-sheet"])
+  for (const sheet of ["hero-sheet", "props-sheet", "extra-sheet", "hero-run-sheet", "kid-run-sheet", "hero-duck-sheet"])
     scene.textures.remove(sheet);
 }
 export function heroFrame(state: string, time: number) {
