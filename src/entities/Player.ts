@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { StrideAnimator } from "../utils/StrideAnimator";
-import { HERO_RUN, HERO_DUCK } from "../config/Locomotion";
+import { HERO_RUN, HERO_DUCK, HERO_MAX_RUN_SPEED } from "../config/Locomotion";
 import { save } from "../systems/SaveManager";
 import { HERO_SCALE, heroFrame } from "../utils/ArcadeArt";
 export type PlayerState =
@@ -44,7 +44,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .setDepth(20);
 
     this.bodyRef.setSize(19, 58).setOffset(9, -10);
-    this.setMaxVelocity(260, 700);
+    this.setMaxVelocity(HERO_MAX_RUN_SPEED, 700);
     this.capturePrevious();
   }
   get bodyRef() {
@@ -79,7 +79,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   animate(now: number) {
     this.gait.setCycle(this.state === "duck" ? HERO_DUCK : HERO_RUN);
     const key = this.state === "run"
-      ? `hero-run-stride-${this.gait.frame(this.visualAlpha)}`
+      ? this.gait.animationFPS === 0 ? heroFrame("idle", now) : `hero-run-stride-${this.gait.frame(this.visualAlpha)}`
       : this.state === "duck" ? `hero-duck-${this.gait.frame(this.visualAlpha)}` : heroFrame(this.state, now);
     if (key !== this.lastFrame) {
       this.visual.setTexture(key);
@@ -96,16 +96,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.visual.setPosition(snap ? this.x : Phaser.Math.Linear(this.previousX, this.x, alpha), (snap ? this.y : Phaser.Math.Linear(this.previousY, this.y, alpha)) + 1);
   }
   land() {
+    // Compression is drawn into the poses. Never squash/stretch the whole character.
     this.scene.tweens.killTweensOf(this.visual);
     this.visual.setScale(HERO_SCALE);
-    if (save.data.settings.steadyView || save.data.settings.reducedMotion) return;
-    this.scene.tweens.add({
-      targets: this.visual,
-      scaleX: HERO_SCALE * 1.08,
-      scaleY: HERO_SCALE * 0.92,
-      duration: 75,
-      yoyo: true,
-    });
   }
   resetVisual() {
     this.setDucking(false);

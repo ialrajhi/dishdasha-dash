@@ -1,5 +1,7 @@
 # Running movement and sprite synchronization
 
+**1.5.2 update:** The hero now uses eight redrawn poses and a velocity-driven 8–14 FPS readability range, as documented in `RUN_CYCLE_REVIEW.md`. The fixed-distance formulas below remain supported by `StrideAnimator` and used by the boy and crouch cycles, but the hero's `cadence` option deliberately replaces that unbounded FPS with `8 + 6 * clamp(abs(speed)/260, 0, 1)`. A stopped hero exits to idle and restarts at contact. The remainder of this document records the original 1.5.1 distance-sync design and calibration method.
+
 The game uses `src/utils/StrideAnimator.ts` for the hero and moving boy. Physics determines speed; the sprite follows actual travel after collision resolution. This preserves level timing, obstacle spacing and jump difficulty when animation cadence changes.
 
 ## Formula and units

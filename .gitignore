@@ -14,3 +14,7 @@ android/.gradle/
 android/**/build/
 *.jks
 *.keystore
+
+# Reproducible review captures; retain the compact MP4 and standalone review page.
+art/review/pose-*.png
+art/review/*.webm

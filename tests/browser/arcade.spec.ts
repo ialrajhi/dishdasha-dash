@@ -22,11 +22,12 @@ test("menu stays still and running uses grounded alternating strides without bra
     p.state = "run";
     p.resetVisual();
     p.bodyRef.blocked.down = true;
-    const hero = Array.from({length:12}, (_, i) => {
-      p.capturePrevious(); p.x += 80 / 12; p.syncMovement(.1); p.present(1); p.animate(i * 100);
+    const hero = Array.from({length:8}, (_, i) => {
+      p.capturePrevious(); p.x += (260 * 2 / 3) / 12; p.syncMovement(1 / 12); p.present(1); p.animate(i * 100);
       return p.visual.texture.key;
     });
     const stationary = p.visual.texture.key;
+    p.capturePrevious(); p.syncMovement(1 / 60); p.present(1);
     p.animate(9000);
     const kid = s.hazards.find((h: any) => h.spec.kind === "kid");
     const feet: number[] = [];
@@ -37,8 +38,8 @@ test("menu stays still and running uses grounded alternating strides without bra
     });
     return { hero, stationary, stopped: p.visual.texture.key, boy, feet };
   });
-  expect(new Set(gait.hero).size).toBe(12);
-  expect(gait.stopped).toBe(gait.stationary);
+  expect(new Set(gait.hero).size).toBe(8);
+  expect(gait.stopped).toMatch(/^hero-idle/);
   expect(new Set(gait.boy).size).toBe(12);
   expect(new Set(gait.feet).size).toBe(1);
 });

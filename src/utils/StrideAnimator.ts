@@ -4,9 +4,11 @@ export interface StrideCycle {
   /** Duration in seconds at the animation's reference playback rate. */
   readonly loopDuration: number;
   readonly frameCount: number;
+  /** Optional authored-pose cadence. The hero prioritizes readable poses over an unbounded FPS. */
+  readonly cadence?: { readonly minFPS: number; readonly maxFPS: number; readonly maxRunSpeed: number };
 }
 
-/** Movement owns the speed; the sprite follows collision-resolved travel. */
+/** Movement owns speed. Authored pose cadence can clamp FPS for small-sprite readability. */
 export class StrideAnimator {
   private cycle!: StrideCycle;
   private previousPhase = 0;
@@ -14,6 +16,7 @@ export class StrideAnimator {
   private phase = 0;
   velocity = 0;
   playbackRate = 0;
+  animationFPS = 0;
 
   constructor(cycle: StrideCycle) { this.setCycle(cycle); }
 
@@ -26,8 +29,12 @@ export class StrideAnimator {
         !Number.isFinite(cycle.loopDuration) || cycle.loopDuration <= 0 ||
         !Number.isSafeInteger(cycle.frameCount) || cycle.frameCount < 1)
       throw new RangeError("A stride needs positive length, duration and integer frame count.");
+    if (cycle.cadence && (!Number.isFinite(cycle.cadence.minFPS) || cycle.cadence.minFPS <= 0 ||
+        !Number.isFinite(cycle.cadence.maxFPS) || cycle.cadence.maxFPS < cycle.cadence.minFPS ||
+        !Number.isFinite(cycle.cadence.maxRunSpeed) || cycle.cadence.maxRunSpeed <= 0))
+      throw new RangeError("Cadence needs a positive speed and an ordered, positive FPS range.");
     this.cycle = cycle;
-    this.playbackRate = Math.abs(this.velocity) / this.referenceVelocity;
+    this.updateRate();
   }
 
   /** Call once per physics step, after collision resolution. Signed dx supports either facing. */
@@ -36,10 +43,14 @@ export class StrideAnimator {
       throw new RangeError("Stride displacement and elapsed seconds must be finite; time cannot be negative.");
     this.previousPhase = this.phase;
     this.velocity = grounded && seconds > 0 ? dx / seconds : 0;
-    this.playbackRate = Math.abs(this.velocity) / this.referenceVelocity;
-    // rate * dt / reference loop duration simplifies to |dx| / stride length.
-    // Using actual travel also prevents running against a wall or through a pause.
-    this.stepCycles = grounded && seconds > 0 ? Math.abs(dx) / this.cycle.strideLength : 0;
+    this.updateRate();
+    // Without a cadence range, this simplifies to |dx| / stride length.
+    // With one, integrate the clamped pose FPS. Actual travel still decides speed/stops.
+    this.stepCycles = this.animationFPS * seconds / this.cycle.frameCount;
+    // A stationary hero exits to its dedicated idle pose and restarts at a clean contact.
+    // Preserve the in-progress phase in the air; jumping must not restart the step clock.
+    if (this.cycle.cadence && grounded && seconds > 0 && this.animationFPS === 0)
+      this.previousPhase = 0;
     this.phase = this.wrap(this.previousPhase + this.stepCycles);
   }
 
@@ -58,7 +69,15 @@ export class StrideAnimator {
   reset(phase = 0) {
     if (!Number.isFinite(phase)) throw new RangeError("Stride phase must be finite.");
     this.phase = this.previousPhase = this.wrap(phase);
-    this.stepCycles = this.velocity = this.playbackRate = 0;
+    this.stepCycles = this.velocity = this.playbackRate = this.animationFPS = 0;
+  }
+
+  private updateRate() {
+    const speed = Math.abs(this.velocity), cadence = this.cycle.cadence;
+    this.animationFPS = cadence
+      ? speed <= .1 ? 0 : cadence.minFPS + (cadence.maxFPS - cadence.minFPS) * Math.min(1, speed / cadence.maxRunSpeed)
+      : speed / this.cycle.strideLength * this.cycle.frameCount;
+    this.playbackRate = this.animationFPS / (this.cycle.frameCount / this.cycle.loopDuration);
   }
 
   private wrap(value: number) { return ((value % 1) + 1) % 1; }

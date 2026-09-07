@@ -14,7 +14,7 @@ test('crouching preserves the face size of the running character', async () => {
     expect(xs.length).toBeGreaterThan(500);
     return [Math.max(...xs)-Math.min(...xs)+1,Math.max(...ys)-Math.min(...ys)+1];
   }
-  const run=await face('hero-run-sheet.webp',[205,80,277,150]);
+  const run=await face('hero-run8-sheet.webp',[205,80,277,150]);
   const duck=await face('hero-duck-sheet.webp',[220,140,310,240]);
   for(let i=0;i<2;i++) {expect(duck[i]/run[i]).toBeGreaterThan(.85);expect(duck[i]/run[i]).toBeLessThan(1.15);}
 });

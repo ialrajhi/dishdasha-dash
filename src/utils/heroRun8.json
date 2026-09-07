@@ -1,0 +1,114 @@
+{
+  "width": 384,
+  "height": 320,
+  "columns": 4,
+  "count": 8,
+  "baseline": 318,
+  "scale": 0.815,
+  "frames": [
+    {
+      "pose": "left contact",
+      "nearFoot": "forward / supporting",
+      "nearArm": "back",
+      "visibleBounds": [
+        56,
+        60,
+        318,
+        318
+      ],
+      "headAnchorX": 234,
+      "baseline": 318
+    },
+    {
+      "pose": "left compression",
+      "nearFoot": "forward / supporting",
+      "nearArm": "back",
+      "visibleBounds": [
+        93,
+        71,
+        308,
+        318
+      ],
+      "headAnchorX": 234,
+      "baseline": 318
+    },
+    {
+      "pose": "left stance / right passing",
+      "nearFoot": "supporting / trailing",
+      "nearArm": "crossing forward",
+      "visibleBounds": [
+        126,
+        53,
+        281,
+        318
+      ],
+      "headAnchorX": 234,
+      "baseline": 318
+    },
+    {
+      "pose": "right reaching",
+      "nearFoot": "supporting / trailing",
+      "nearArm": "forward",
+      "visibleBounds": [
+        57,
+        60,
+        323,
+        318
+      ],
+      "headAnchorX": 234,
+      "baseline": 318
+    },
+    {
+      "pose": "right contact",
+      "nearFoot": "trailing / recovering",
+      "nearArm": "forward",
+      "visibleBounds": [
+        44,
+        60,
+        328,
+        318
+      ],
+      "headAnchorX": 234,
+      "baseline": 318
+    },
+    {
+      "pose": "right compression",
+      "nearFoot": "trailing / recovering",
+      "nearArm": "forward",
+      "visibleBounds": [
+        93,
+        69,
+        307,
+        318
+      ],
+      "headAnchorX": 234,
+      "baseline": 318
+    },
+    {
+      "pose": "right stance / left passing",
+      "nearFoot": "passing / reaching forward",
+      "nearArm": "back",
+      "visibleBounds": [
+        126,
+        54,
+        292,
+        318
+      ],
+      "headAnchorX": 234,
+      "baseline": 318
+    },
+    {
+      "pose": "left reaching",
+      "nearFoot": "passing / reaching forward",
+      "nearArm": "back",
+      "visibleBounds": [
+        43,
+        62,
+        315,
+        318
+      ],
+      "headAnchorX": 234,
+      "baseline": 318
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "source": "art/source/hero-run8-base.png",
+  "scale": 0.815,
+  "worldScale": 0.26,
+  "accepted": "All eight rendered poses inspected on stationary ground, final raster geometry verified and gameplay checked",
+  "frames": [
+    {
+      "frame": 1,
+      "bounds": [
+        83,
+        89,
+        404,
+        406
+      ],
+      "headAnchorX": 301.1913669064748,
+      "groundY": 406,
+      "pose": "left contact",
+      "nearFoot": "forward / supporting",
+      "nearArm": "back",
+      "crownToSole": 317,
+      "source": "art/source/hero-run8-contact.png"
+    },
+    {
+      "frame": 2,
+      "bounds": [
+        557,
+        491,
+        821,
+        794
+      ],
+      "headAnchorX": 730.1807289066401,
+      "groundY": 794,
+      "pose": "left compression",
+      "nearFoot": "forward / supporting",
+      "nearArm": "back",
+      "crownToSole": 303,
+      "source": "art/source/hero-run8-compression.png",
+      "height": 303
+    },
+    {
+      "frame": 3,
+      "bounds": [
+        970,
+        84,
+        1160,
+        409
+      ],
+      "headAnchorX": 1102.559599156118,
+      "groundY": 409,
+      "pose": "left stance / right passing",
+      "nearFoot": "supporting / trailing",
+      "nearArm": "crossing forward",
+      "crownToSole": 325,
+      "source": "art/source/hero-run8-base.png"
+    },
+    {
+      "frame": 4,
+      "bounds": [
+        1341,
+        92,
+        1667,
+        409
+      ],
+      "headAnchorX": 1558.142787761049,
+      "groundY": 409,
+      "pose": "right reaching",
+      "nearFoot": "supporting / trailing",
+      "nearArm": "forward",
+      "crownToSole": 317,
+      "source": "art/source/hero-run8-base.png"
+    },
+    {
+      "frame": 5,
+      "bounds": [
+        57,
+        476,
+        406,
+        793
+      ],
+      "headAnchorX": 290.7129719264279,
+      "groundY": 793,
+      "pose": "right contact",
+      "nearFoot": "trailing / recovering",
+      "nearArm": "forward",
+      "crownToSole": 317,
+      "source": "art/source/hero-run8-base.png"
+    },
+    {
+      "frame": 6,
+      "bounds": [
+        557,
+        491,
+        820,
+        796
+      ],
+      "headAnchorX": 729.7985611510792,
+      "groundY": 796,
+      "pose": "right compression",
+      "nearFoot": "trailing / recovering",
+      "nearArm": "forward",
+      "crownToSole": 305,
+      "source": "art/source/hero-run8-base.png"
+    },
+    {
+      "frame": 7,
+      "bounds": [
+        953,
+        475,
+        1157,
+        799
+      ],
+      "headAnchorX": 1085.5574162679425,
+      "groundY": 799,
+      "pose": "right stance / left passing",
+      "nearFoot": "passing / reaching forward",
+      "nearArm": "back",
+      "crownToSole": 324,
+      "source": "art/source/hero-run8-base.png"
+    },
+    {
+      "frame": 8,
+      "bounds": [
+        1335,
+        481,
+        1669,
+        795
+      ],
+      "headAnchorX": 1569.3521055301878,
+      "groundY": 795,
+      "pose": "left reaching",
+      "nearFoot": "passing / reaching forward",
+      "nearArm": "back",
+      "crownToSole": 314,
+      "source": "art/source/hero-run8-base.png"
+    }
+  ],
+  "crownToSole": [
+    317,
+    303,
+    325,
+    317,
+    317,
+    305,
+    324,
+    314
+  ],
+  "rasterRounding": "RecommendMath.ceiluniformcropdimensions; avoidper-poseheightnormalization."
+}

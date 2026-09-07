@@ -81,3 +81,42 @@ describe("movement-driven stride clock", () => {
     expect(gait.sample()).toBe(0);
   });
 });
+
+describe("readable eight-pose hero cadence", () => {
+  const eight = { strideLength: 80, loopDuration: 8 / 12, frameCount: 8,
+    cadence: { minFPS: 8, maxFPS: 14, maxRunSpeed: 260 } };
+  it("uses actual speed with a readable FPS cap, including acceleration and reverse travel", () => {
+    const gait = new StrideAnimator(eight);
+    for (const speed of [1, 65, 130, 195, 260, 520, -130]) {
+      gait.advance(speed / 60, 1 / 60);
+      expect(gait.animationFPS).toBeCloseTo(8 + 6 * Math.min(Math.abs(speed) / 260, 1));
+      expect(gait.animationFPS).toBeGreaterThanOrEqual(8);
+      expect(gait.animationFPS).toBeLessThanOrEqual(14);
+    }
+  });
+  it("cleanly exits an awkward pose on stopping and restarts at contact", () => {
+    const gait = new StrideAnimator(eight);
+    gait.advance(65, .5); expect(gait.frame()).not.toBe(0);
+    gait.advance(0, 1 / 60);
+    expect(gait.animationFPS).toBe(0);
+    expect(gait.frame(0)).toBe(0); expect(gait.frame(1)).toBe(0);
+    gait.advance(130 / 120, 1 / 120);
+    expect(gait.frame()).toBe(0);
+    expect(gait.animationFPS).toBe(11);
+  });
+  it("holds the current step in the air without applying the stationary restart", () => {
+    const gait = new StrideAnimator(eight);
+    gait.advance(30, .2); const phase = gait.sample();
+    gait.advance(200, .8, false);
+    expect(gait.sample()).toBeCloseTo(phase);
+    expect(gait.animationFPS).toBe(0);
+  });
+  it("plays the same eight-pose cycle across different render rates", () => {
+    for (const hz of [15, 30, 60, 120, 144]) {
+      const gait = new StrideAnimator(eight);
+      for (let i=0;i<hz;i++) gait.advance(130/hz,1/hz);
+      expect(gait.sample()).toBeCloseTo(3/8,9); // 11 fps: one full eight-pose loop plus 3 frames
+      expect(gait.frame()).toBe(3);
+    }
+  });
+});

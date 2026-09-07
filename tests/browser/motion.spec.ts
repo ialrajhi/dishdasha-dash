@@ -24,27 +24,62 @@ test('hero cadence follows actual travel through acceleration, stops, ducking an
   const result = await page.evaluate(() => {
     const d = (window as any).__DASH__, s = d.scene(), p = s.player; d.game.loop.sleep();
     p.state = 'run'; p.resetVisual(); p.bodyRef.blocked.down = true;
-    const origin = p.x, samples: any[] = [];
+    const samples: any[] = [];
+    let phase = 0;
     for (const speed of [0, 40, 80, 160, 240, 80, 0]) {
       p.capturePrevious(); p.x += speed * .1; p.syncMovement(.1);
+      const fps = speed === 0 ? 0 : 8 + 6 * speed / 260;
+      if(speed === 0)phase = 0;
       for (const alpha of [0, .25, .5, .75, 1]) {
         p.present(alpha); p.animate(1000);
-        const travel = p.visual.x - origin;
-        samples.push({speed, frame: Number(p.visual.texture.key.split('-').pop()), travel, rate: p.gait.playbackRate});
+        samples.push({speed, texture:p.visual.texture.key, fps:p.gait.animationFPS,
+          expected:Math.floor((phase + fps * .1 / 8 * alpha) * 8 + 1e-7) % 8});
       }
+      phase = (phase + fps * .1 / 8) % 1;
     }
-    const phase = p.gait.sample(); p.state = 'duck'; p.setDucking(true); p.animate(1000);
+    p.capturePrevious();p.x+=10;p.syncMovement(.1);p.present(1);p.animate(1000);
+    phase = p.gait.sample(); p.state = 'duck'; p.setDucking(true); p.animate(1000);
     const duck = p.gait.sample(); p.state = 'run'; p.setDucking(false); p.animate(1000);
     const run = p.gait.sample();
     p.bodyRef.reset(210, 300); p.resetVisual(); p.animate(1000);
     return {samples, phase, duck, run, reset: [p.gait.sample(), p.visual.x, p.visual.texture.key]};
   });
   for (const sample of result.samples) {
-    expect(sample.frame).toBe(Math.floor(sample.travel / 80 * 12 + 1e-7) % 12);
-    expect(sample.rate).toBeCloseTo(sample.speed / 160);
+    if(sample.speed===0){expect(sample.texture).toMatch(/^hero-idle/);expect(sample.fps).toBe(0);}
+    else {expect(sample.texture).toBe('hero-run-stride-'+sample.expected);expect(sample.fps).toBeGreaterThanOrEqual(8);expect(sample.fps).toBeLessThanOrEqual(14);}
   }
   expect(result.duck).toBe(result.phase); expect(result.run).toBe(result.phase);
-  expect(result.reset).toEqual([0, 210, 'hero-run-stride-0']);
+  expect(result.reset.slice(0,2)).toEqual([0, 210]);
+  expect(result.reset[2]).toMatch(/^hero-idle/);
+});
+
+test('running, ducking, jumping and landing keep a constant visual scale and unchanged collision shapes', async ({page}) => {
+  await page.goto('/?testing=1'); await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await page.evaluate(() => (window as any).__DASH__.start(1));
+  await page.waitForFunction(() => (window as any).__DASH__.scene()?.player?.x > 240);
+  const report=await page.evaluate(()=>{
+    const d=(window as any).__DASH__,s=d.scene(),p=s.player;d.game.loop.sleep();
+    d.save.settings({steadyView:false,reducedMotion:false});
+    s.pressJump();const frames:any[]=[];
+    for(let i=0;i<90;i++){
+      s.update(i*1000/60,1000/60);p.animate(s.gameTime);
+      frames.push({state:p.state,texture:p.visual.texture.key,x:p.visual.scaleX,y:p.visual.scaleY,
+        width:p.bodyRef.width,height:p.bodyRef.height,physicsY:p.y});
+    }
+    s.pressDuck('scale-test');s.update(0,1000/60);p.land();
+    return {frames,duck:{height:p.bodyRef.height,width:p.bodyRef.width,x:p.visual.scaleX,y:p.visual.scaleY},
+      tweens:s.tweens.getTweensOf(p.visual).length};
+  });
+  expect(report.frames.some(f=>f.state==='jump')).toBe(true);
+  expect(report.frames.some(f=>f.state==='fall')).toBe(true);
+  expect(report.frames.some(f=>f.state==='run')).toBe(true);
+  for(const f of report.frames){
+    expect([f.x,f.y,f.width,f.height]).toEqual([.26,.26,19,58]);
+    if(f.state==='jump')expect(f.texture).toBe('hero-jumpUp');
+    if(f.state==='fall')expect(f.texture).toBe('hero-fall');
+  }
+  expect(report.duck).toEqual({height:44,width:19,x:.26,y:.26});
+  expect(report.tweens).toBe(0);
 });
 
 test('boy frame boundaries follow his interpolated position, including when hazards stop', async ({page}) => {

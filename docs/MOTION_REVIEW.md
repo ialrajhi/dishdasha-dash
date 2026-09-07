@@ -39,3 +39,7 @@ Targeted ImageGen edits remove shoulder discs and limb end caps from all twelve 
 ## 1.5.1 — shared stride clock
 
 Hero and boy use a reusable distance-integrated stride clock with explicit length/duration calibration and shared position/phase interpolation. Run/crouch changes preserve leg phase. Airborne apex state and moving respawn idle poses are corrected. Existing art and travel speeds remain unchanged; painted contacts still need calibration. See `STRIDE_SYNC.md` for formulas, integration and art limits, and `RELEASE_PREPARATION_1.5.1.md` for validation. All 32 unit and 31 browser tests passed.
+
+## 1.5.2 — eight authored run poses
+
+Replaced the hero run artwork with a selected eight-pose cycle. Both contacts have opposite near-arm silhouettes; passing poses are narrow with raised recovery knees. One shared source scale and constant runtime scale preserve body proportions. Compression dips2.86/2.34pixels and passing rises1.82/1.56pixels; supporting soles stay on the ground baseline. No landing squash/stretch. The hero uses actual-speed-driven8–14FPS and clean idle stops; the boy remains12frames. All37unit and32browser tests passed, including allfivefullcourses. See `RUN_CYCLE_REVIEW.md` and `RELEASE_PREPARATION_1.5.2.md` for visual evidence, provenance and native-device limits.
