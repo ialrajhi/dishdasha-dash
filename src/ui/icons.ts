@@ -21,6 +21,14 @@ export const icon = (name: string) => {
     lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/>',
     check: '<path d="m4 12 5 5L20 6"/>',
     jump: '<path d="M12 21V4m-7 7 7-7 7 7"/>',
+    duck: '<path d="M12 3v17m-7-7 7 7 7-7"/>',
+    shop: '<path d="M5 8h14l-1 13H6zM9 8V6a3 3 0 0 1 6 0v2"/>',
+    music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    starFill: '<path d="m12 2 3 7 7 1-5 5 1 7-6-4-6 4 1-7-5-5 7-1z" fill="currentColor"/>',
+    restart: '<path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/>',
+    upgrade: '<path d="M12 20V8m-6 6 6-6 6 6M5 4h14"/>',
+    shirt: '<path d="M8 3 3 6l2 5 3-1v11h8V10l3 1 2-5-5-3a4 4 0 0 1-8 0Z"/>',
   };
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] ?? paths.star}</svg>`;
 };

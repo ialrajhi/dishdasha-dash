@@ -26,7 +26,7 @@ describe("persistent progress", () => {
       }),
     );
     const s = new SaveManager();
-    expect(s.data.unlocked).toBe(5);
+    expect(s.data.unlocked).toBe(10);
     expect(s.data.best).toBe(0);
     expect(s.data.settings.volume).toBe(100);
     expect(s.data.settings.language).toBe("en");

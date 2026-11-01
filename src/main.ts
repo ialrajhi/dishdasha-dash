@@ -1,6 +1,5 @@
 import Phaser from "phaser";
-import "./style.css";
-import "./arcade.css";
+import "./ui/game.css";
 import "./dance/dance.css";
 import { GameUI, type Screen } from "./ui/GameUI";
 import { MenuScene } from "./scenes/MenuScene";
@@ -12,6 +11,9 @@ import { campaign } from "./systems/ScoreManager";
 import { DEV, WIDTH, HEIGHT, RENDER_SCALE } from "./config/Constants";
 import { initializePlatform, platformEvents, minimizeAndroid } from "./platform/Platform";
 import { GamepadInput } from "./platform/GamepadInput";
+import { AVATARS, UPGRADES } from "./systems/Economy";
+import { FINAL_LEVEL, LEVELS } from "./levels/levels";
+import { ensureAvatar } from "./utils/AvatarArt";
 await initializePlatform();
 let currentLevel = 1;
 let optionsReturn: Screen = "menu";
@@ -21,6 +23,7 @@ let graphicsState: "ok" | "lost" | "restored" = "ok";
 let graphicsInterruptedBoot = false;
 let menuWasActive = false;
 const ui = new GameUI(action);
+ui.onScreen = (screen) => game.registry.set("screen", screen);
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: "phaser-game",
@@ -62,15 +65,17 @@ const hooks: GameHooks = {
     if (ui.screen === "playing") ui.notice(text, duration);
   },
   pause: () => pause(),
+  collect: (kind, x, y) => ui.collect(kind, x, y),
+  hit: (shielded) => ui.hit(shielded),
   over: (state, deaths) => {
     game.scene.pause("Game");
-    audio.pause(true);
+    audio.music("none");
     ui.show("over", { state, deaths });
   },
   complete: (result) => {
     game.scene.pause("Game");
-    audio.pause(false);
-    ui.show(result.id === 5 ? "victory" : "complete", { result });
+    audio.music("none");
+    ui.show(result.id === FINAL_LEVEL ? "victory" : "complete", { result });
   },
 };
 function start(level = 1, reset = true, practice = false) {
@@ -82,9 +87,12 @@ function start(level = 1, reset = true, practice = false) {
   }
   game.scene.stop("Menu");
   game.scene.stop("Game");
+  document.querySelector<HTMLElement>(".backdrop")!.style.backgroundImage = `var(--level-art-${level})`;
   ui.show("playing");
   audio.unlock();
   audio.pause(false);
+  audio.music(LEVELS[level - 1].night ? "night" : "game");
+  if (!practice) ui.stageIntro(LEVELS[level - 1]);
   game.scene.start("Game", { level, hooks, practice });
 }
 function menu(screen: Screen = "menu") {
@@ -92,7 +100,9 @@ function menu(screen: Screen = "menu") {
   game.scene.stop("Game");
   if (game.scene.isPaused("Menu")) game.scene.resume("Menu");
   if (!game.scene.isActive("Menu")) game.scene.start("Menu");
+  document.querySelector<HTMLElement>(".backdrop")!.style.backgroundImage = "";
   audio.pause(false);
+  audio.music("menu");
   ui.show(screen);
 }
 function pause() {
@@ -125,12 +135,11 @@ function back() {
 async function fullscreen() {
   const desktop = (window as Window & { desktopGame?: { fullscreen: () => Promise<void> } }).desktopGame;
   if (desktop) { await desktop.fullscreen(); return; }
-  const el = document.querySelector(".arcade-shell") as HTMLElement;
+  const el = document.querySelector(".stage") as HTMLElement;
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
     else if (el.requestFullscreen) await el.requestFullscreen();
     else {
-      document.querySelector(".game-cabinet")?.classList.toggle("expanded");
       ui.notice(
         save.data.settings.language === "ar"
           ? "كبرنا الشاشة"
@@ -162,9 +171,68 @@ function action(name: string, value?: string) {
   if (!assetsReady) return;
   if (!["jump-down", "jump-up", "duck-down", "duck-up", "volume"].includes(name)) {
     audio.unlock();
-    audio.play("select");
+    if (!["title-start", "buy-avatar", "upgrade"].includes(name)) audio.play(name === "back" ? "back" : "select");
   }
   switch (name) {
+    case "title-start":
+      if (ui.screen !== "title") break;
+      audio.play("whoosh");
+      menu();
+      break;
+    case "shop":
+      ui.shopPick = save.data.avatar;
+      menu("shop");
+      break;
+    case "shop-tab":
+      ui.shopTab = value === "upgrades" ? "upgrades" : "avatars";
+      ui.show("shop");
+      break;
+    case "pick-avatar":
+      if (AVATARS.some((a) => a.id === value)) {
+        ui.shopPick = value!;
+        ensureAvatar(game.textures, value!);
+        ui.show("shop");
+      }
+      break;
+    case "buy-avatar": {
+      const avatar = AVATARS.find((a) => a.id === value);
+      if (!avatar) break;
+      if (save.buyAvatar(avatar.id, avatar.price)) {
+        audio.play("buy");
+        ui.portrait();
+        ui.show("shop");
+        ui.purchased();
+      } else {
+        audio.play("deny");
+        ui.shopMessage(save.data.settings.language === "ar"
+          ? `تحتاج ${avatar.price - save.data.coins} كوينز زيادة`
+          : `You need ${avatar.price - save.data.coins} more coins`);
+      }
+      break;
+    }
+    case "equip":
+      if (value && save.equip(value)) {
+        audio.play("star");
+        ui.portrait();
+        ui.show("shop");
+      }
+      break;
+    case "upgrade": {
+      const upgrade = UPGRADES.find((u) => u.id === value);
+      if (!upgrade) break;
+      const price = upgrade.prices[save.data.upgrades[upgrade.id]];
+      if (price !== undefined && save.upgrade(upgrade.id, price)) {
+        audio.play("buy");
+        ui.show("shop");
+        ui.purchased();
+      } else {
+        audio.play("deny");
+        if (price !== undefined) ui.shopMessage(save.data.settings.language === "ar"
+          ? `تحتاج ${price - save.data.coins} كوينز زيادة`
+          : `You need ${price - save.data.coins} more coins`);
+      }
+      break;
+    }
     case "retry-save":
       save.persist();
       break;
@@ -187,7 +255,7 @@ function action(name: string, value?: string) {
       const id = Number(value);
       if (
         id >= 1 &&
-        id <= 5 &&
+        id <= FINAL_LEVEL &&
         (DEV.unlockAllLevels || id <= save.data.unlocked)
       )
         start(id, true, id === 1 && save.data.tutorial === "new");
@@ -237,7 +305,7 @@ function action(name: string, value?: string) {
       start(currentLevel, false, !!scene().practiceStep);
       break;
     case "next":
-      start(Math.min(5, currentLevel + 1), false);
+      start(Math.min(FINAL_LEVEL, currentLevel + 1), false);
       break;
     case "jump-down":
       scene().pressJump(value ?? "button");
@@ -307,7 +375,8 @@ function action(name: string, value?: string) {
       break;
   }
 }
-ui.show("menu");
+ui.show("title");
+game.registry.set("screen", "title");
 window.addEventListener('save-recovered', () => {
   if (ui.screen === 'playing') pause();
   else ui.show(ui.screen);

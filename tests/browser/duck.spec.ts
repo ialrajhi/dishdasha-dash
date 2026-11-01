@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 async function start(page:any) {
-  await page.goto('/?testing=1'); await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await page.goto('/?testing=1'); await expect(page.locator('.boot')).toHaveCount(0); await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.locator('[data-action="start"]').click(); await page.waitForTimeout(200);
 }
 test('overhead obstacles require ducking, preserve feet, and award points only after clearance', async ({page}) => {
@@ -36,6 +36,8 @@ test('keyboard and touch duck are held controls and cannot launch a buffered jum
   expect(await page.evaluate(()=>(window as any).__DASH__.scene().player.y)).toBe(300);
   await page.keyboard.up('ArrowDown');await page.waitForTimeout(100);
   expect(await page.evaluate(()=>(window as any).__DASH__.scene().player.ducking)).toBe(false);
+  // On-screen controls show on touch devices; desktop players use the keyboard.
+  await page.evaluate(() => document.documentElement.classList.add('touch'));
   const button=page.locator('#duck-button');const b=(await button.boundingBox())!;
   expect(b.width).toBeGreaterThanOrEqual(44);expect(b.height).toBeGreaterThanOrEqual(44);
   await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.waitForTimeout(90);

@@ -16,7 +16,7 @@ export class WorldRenderer {
     private level: LevelConfig,
     course?: Course,
   ) {
-    this.artScale = (GROUND / floorY[level.id - 1]) * 1.06;
+    this.artScale = (GROUND / floorY[level.art - 1]) * 1.06;
     this.courseLength = course?.length ?? 0;
     // Phaser's centered, zoomed camera shifts fixed objects by half the logical viewport.
     const fixed = scene.add
@@ -24,11 +24,11 @@ export class WorldRenderer {
       .setScrollFactor(0)
       .setDepth(-20);
     this.scenery = scene.add
-      .image(0, GROUND - floorY[level.id - 1] * this.artScale, `scenery-${level.id}`)
+      .image(0, GROUND - floorY[level.art - 1] * this.artScale, `scenery-${level.night ? "night-" : ""}${level.art}`)
       .setOrigin(0)
       .setScale(this.artScale);
     this.street = scene.add
-      .tileSprite(0, GROUND, 640, 60, `street-${level.id}`)
+      .tileSprite(0, GROUND, 640, 60, `street-${level.night ? "night-" : ""}${level.art}`)
       .setOrigin(0)
       .setTileScale(this.artScale);
     this.atmosphere = scene.add.graphics();
@@ -108,8 +108,10 @@ export class WorldRenderer {
     this.street.tilePositionX = x / this.artScale;
     const g = this.atmosphere;
     g.clear();
-    if (save.data.settings.reducedMotion || save.data.settings.steadyView) return;
-    if (this.level.id < 3) {
+    // Ambient life is not camera motion, so only "Reduce effects" turns it off.
+    if (save.data.settings.reducedMotion) return;
+    const night = !!this.level.night;
+    if (this.level.art < 3 && !night) {
       g.lineStyle(0.9, 0x354c62, 0.65);
       for (let i = 0; i < 5; i++) {
         const bx = 690 - ((now / 70 + i * 37) % 760),
@@ -122,15 +124,21 @@ export class WorldRenderer {
           .strokePath();
       }
     }
-    for (let i = 0; i < 15; i++) {
-      const drift = this.level.id === 4 ? now / 24 : -now / 110;
+    // Dust and pollen by day; fireflies and lantern sparks that glow and pulse at night.
+    for (let i = 0; i < (night ? 22 : 15); i++) {
+      const drift = this.level.art === 4 ? now / 24 : -now / 110;
       const px = ((((i * 83 + drift - x * 0.6) % 670) + 670) % 670) - 15;
-      const py = 150 + ((i * 31) % 135) + Math.sin(now / 900 + i) * 7;
-      g.fillStyle(
-        this.level.id > 2 ? 0xffcf71 : 0xfff5d4,
-        0.12 + (1 + Math.sin(now / 600 + i)) * 0.13,
-      );
-      g.fillCircle(px, py, this.level.id === 4 ? 0.7 : 0.9);
+      const py = (night ? 120 : 150) + ((i * 31) % (night ? 170 : 135)) + Math.sin(now / 900 + i) * 7;
+      const pulse = (1 + Math.sin(now / (night ? 380 : 600) + i * 1.7)) / 2;
+      if (night) {
+        g.fillStyle(0xffc65c, 0.08 + pulse * 0.12);
+        g.fillCircle(px, py, 2.6);
+        g.fillStyle(0xffe6a0, 0.35 + pulse * 0.55);
+        g.fillCircle(px, py, 0.9);
+      } else {
+        g.fillStyle(this.level.art > 2 ? 0xffcf71 : 0xfff5d4, 0.12 + pulse * 0.26);
+        g.fillCircle(px, py, this.level.art === 4 ? 0.7 : 0.9);
+      }
     }
   }
 }

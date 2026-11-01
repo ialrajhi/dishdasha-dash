@@ -2,11 +2,12 @@ import { test, expect } from "@playwright/test";
 test("plays every full-length course with normal physics, jumping and ducking", async ({
   page,
 }) => {
-  test.setTimeout(180000);
+  test.setTimeout(420000);
   await page.goto("/?testing=1");
   await page.waitForFunction(
     () => !!(window as any).__DASH__?.game.scene.isActive("Menu"),
   );
+  await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.locator('[data-action="start"]').click();
   await page.waitForTimeout(200);
   const report = await page.evaluate(async () => {
@@ -15,7 +16,7 @@ test("plays every full-length course with normal physics, jumping and ducking", 
     game.loop.stop();
     const report: any[] = [];
     let timestamp = performance.now();
-    for (let level = 1; level <= 5; level++) {
+    for (let level = 1; level <= 10; level++) {
       if (level > 1) {
         dash.action("next");
         game.step((timestamp += 16.667), 16.667);
@@ -37,7 +38,7 @@ test("plays every full-length course with normal physics, jumping and ducking", 
               .filter((g: any) => g.x + g.width >= p.x)
               .map((g: any) => ({ x: g.x + 20, kind: "gap" })),
             ...s.collectibles
-              .filter((c: any) => c.active && c.spec.golden && c.x >= p.x - 15)
+              .filter((c: any) => c.active && c.spec.kind === "golden" && c.x >= p.x - 15)
               .map((c: any) => ({ x: c.x, kind: "gold" })),
           ];
           const next = targets.sort((a: any, b: any) => a.x - b.x)[0];
@@ -80,9 +81,9 @@ test("plays every full-length course with normal physics, jumping and ducking", 
     return report;
   });
   console.log("Full course playthrough", JSON.stringify(report));
-  expect(report).toHaveLength(5);
+  expect(report).toHaveLength(10);
   for (const r of report) {
-    expect(r.screen).toBe(r.level === 5 ? "victory" : "complete");
+    expect(r.screen).toBe(r.level === 10 ? "victory" : "complete");
     expect(r.distance).toBeGreaterThanOrEqual(r.length);
     expect(r.tea).toBeGreaterThan(10);
     expect(r.highest).toBeLessThan(230);

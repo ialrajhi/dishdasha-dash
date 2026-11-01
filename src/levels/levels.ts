@@ -38,10 +38,15 @@ export interface LevelConfig {
   intro: string;
   obstacles: ObstacleKind[];
   difficulty: string;
+  /** Which painted street (1–5) the stage is set on. */
+  art: number;
+  /** Chapter 2 revisits the streets after dark with a moonlit grade, stars and lantern light. */
+  night?: boolean;
 }
 export const LEVELS: LevelConfig[] = [
   {
     id: 1,
+    art: 1,
     ar: "الفريج",
     en: "The Neighborhood",
     theme: "neighborhood",
@@ -58,6 +63,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     id: 2,
+    art: 2,
     ar: "الجمعية",
     en: "The Co-op",
     theme: "coop",
@@ -74,6 +80,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     id: 3,
+    art: 3,
     ar: "المباركية",
     en: "Al-Mubarakiya",
     theme: "souq",
@@ -90,6 +97,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     id: 4,
+    art: 4,
     ar: "البر",
     en: "The Desert",
     theme: "desert",
@@ -115,6 +123,7 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     id: 5,
+    art: 5,
     ar: "العرس",
     en: "The Wedding",
     theme: "wedding",
@@ -129,7 +138,98 @@ export const LEVELS: LevelConfig[] = [
     obstacles: ["kid", "tray", "chair", "gift", "waiter", "dallah", "flowers"],
     difficulty: "Party time",
   },
+  {
+    id: 6,
+    art: 1,
+    night: true,
+    ar: "الفريج بالليل",
+    en: "Neighborhood Nights",
+    theme: "neighborhood",
+    speed: 186,
+    duration: 70,
+    sky: ["#0e1733", "#1d2b55", "#3b3f6e"],
+    ground: "#6f6a78",
+    accent: "#8fb4ff",
+    end: "قهوة الفريج",
+    finish: "سهرة حلوة بالفريج!",
+    intro: "الفريج نايم… إلا إنت!",
+    obstacles: ["cat", "box", "kid", "cone", "dallah", "ball", "cart"],
+    difficulty: "Night",
+  },
+  {
+    id: 7,
+    art: 2,
+    night: true,
+    ar: "جمعية آخر الليل",
+    en: "Late-Night Co-op",
+    theme: "coop",
+    speed: 190,
+    duration: 70,
+    sky: ["#101a36", "#22325e", "#45507e"],
+    ground: "#6b6f80",
+    accent: "#9fd0ff",
+    end: "قبل لا تسكر",
+    finish: "لحقنا الجمعية قبل لا تسكر!",
+    intro: "بسرعة! الجمعية بتسكر!",
+    obstacles: ["cart", "melon", "bag", "kid", "dallah", "box", "cart"],
+    difficulty: "Night +",
+  },
+  {
+    id: 8,
+    art: 3,
+    night: true,
+    ar: "المباركية بالفنر",
+    en: "Souq by Lantern Light",
+    theme: "souq",
+    speed: 195,
+    duration: 70,
+    sky: ["#1b1430", "#3a2346", "#6b3f4e"],
+    ground: "#6e4c3e",
+    accent: "#ffc27a",
+    end: "مطعم الحاج",
+    finish: "عشا بالمباركية!",
+    intro: "الفنر شاعل… يلا!",
+    obstacles: ["crate", "pigeon", "cart", "melon", "dallah", "carpet", "kid"],
+    difficulty: "Hard",
+  },
+  {
+    id: 9,
+    art: 4,
+    night: true,
+    ar: "ليلة بالبر",
+    en: "Desert Starlight",
+    theme: "desert",
+    speed: 200,
+    duration: 70,
+    sky: ["#070b1f", "#18204a", "#38305e"],
+    ground: "#8a6e66",
+    accent: "#c9b6ff",
+    end: "شبة النار",
+    finish: "وصلنا الشبة!",
+    intro: "النجوم تدلّك الطريج",
+    obstacles: ["goat", "tire", "cooler", "chair", "dallah", "rope", "ball", "goat"],
+    difficulty: "Hard +",
+  },
+  {
+    id: 10,
+    art: 5,
+    night: true,
+    ar: "الزفة",
+    en: "The Zaffa Parade",
+    theme: "wedding",
+    speed: 206,
+    duration: 72,
+    sky: ["#150f2a", "#33214a", "#6a3a5c"],
+    ground: "#7a3a46",
+    accent: "#ffb3d1",
+    end: "الكوشة",
+    finish: "ألف ألف مبروك!",
+    intro: "الزفة بدت! لا تتأخر!",
+    obstacles: ["waiter", "tray", "kid", "gift", "dallah", "chair", "flowers", "waiter"],
+    difficulty: "Finale",
+  },
 ];
+export const FINAL_LEVEL = LEVELS.length;
 export interface HazardSpec {
   id: string;
   x: number;
@@ -142,10 +242,23 @@ export interface TeaSpec {
   y: number;
   golden?: boolean;
 }
+export interface CoinSpec {
+  id: string;
+  x: number;
+  y: number;
+}
+export interface PowerSpec {
+  id: string;
+  x: number;
+  y: number;
+  kind: "magnet" | "shield";
+}
 export interface Course {
   length: number;
   hazards: HazardSpec[];
   tea: TeaSpec[];
+  coins: CoinSpec[];
+  powerups: PowerSpec[];
   gaps: { x: number; width: number }[];
   checkpoint: number;
 }
@@ -192,9 +305,29 @@ export function createCourse(level: LevelConfig): Course {
       ? [
           { x: hazards[5].x + 220, width: 64 },
           { x: hazards[12].x + 220, width: 70 },
+          // Night stages add a third pit late in the run.
+          ...(level.night ? [{ x: hazards[19].x + 220, width: 72 }] : []),
         ]
       : [];
   // Checkpoint is a safe section before a cluster, never inside a pit or hazard.
   const checkpoint = hazards.find((h) => h.x > length / 2)!.x - 200;
-  return { length, hazards, tea, gaps, checkpoint };
+  // Coins fill the quiet stretch between two obstacles; power-ups replace a few trails.
+  const coins: CoinSpec[] = [];
+  const powerups: PowerSpec[] = [];
+  for (let i = 0; i < hazards.length - 1; i++) {
+    const mid = (hazards[i].x + hazards[i + 1].x) / 2 - 10;
+    if (i % 7 === 4) {
+      powerups.push({ id: `p${i}`, x: mid, y: 250, kind: powerups.length % 2 ? "shield" : "magnet" });
+      continue;
+    }
+    const gap = gaps.find((g) => Math.abs(g.x + g.width / 2 - mid) < 140);
+    const center = gap ? gap.x + gap.width / 2 : mid;
+    const pattern = gap ? 1 : i % 3;
+    for (let j = 0; j < 5; j++) {
+      const t = j / 4;
+      const y = pattern === 0 ? 282 : pattern === 1 ? 282 - Math.sin(t * Math.PI) * 58 : 232;
+      coins.push({ id: `c${i}-${j}`, x: Math.round(center - 52 + j * 26), y: Math.round(y) });
+    }
+  }
+  return { length, hazards, tea, coins, powerups, gaps, checkpoint };
 }

@@ -1,5 +1,6 @@
 import { emptyParty, readParty, type Party } from "../dance/DanceData";
 import { SAVE_KEY } from "../config/Constants";
+import { FINAL_LEVEL } from "../levels/levels";
 export type Language = "ar" | "en";
 export interface Settings {
   music: boolean;
@@ -23,7 +24,15 @@ export interface SaveData {
   settings: Settings;
   party: Party;
   tutorial: "new" | "skipped" | "completed";
+  /** Spendable currency earned from coins and level bonuses. */
+  coins: number;
+  avatar: string;
+  owned: string[];
+  upgrades: Record<UpgradeId, number>;
+  /** Best star rating (0–3) per level, kept apart from LevelRecord for older saves. */
+  stars: Record<number, number>;
 }
+export type UpgradeId = "magnet" | "shield";
 const defaults = (): SaveData => ({
   version: 2,
   revision: 0,
@@ -32,6 +41,11 @@ const defaults = (): SaveData => ({
   levels: {},
   party: emptyParty(),
   tutorial: "new",
+  coins: 0,
+  avatar: "classic",
+  owned: ["classic"],
+  upgrades: { magnet: 0, shield: 0 },
+  stars: {},
   settings: { steadyView: true, music: true, sfx: true, volume: 55, language: "en", reducedMotion: typeof matchMedia !== "undefined" && matchMedia('(prefers-reduced-motion: reduce)').matches },
 });
 const safeNumber = (value: unknown, fallback = 0) =>
@@ -60,11 +74,11 @@ export class SaveManager {
       this.data = defaults();
       this.data.revision = safeNumber(raw.revision);
       this.data.unlocked = Math.min(
-        5,
+        FINAL_LEVEL,
         Math.max(1, safeNumber(raw.unlocked, 1)),
       );
       this.data.best = safeNumber(raw.best);
-      for (let id = 1; id <= 5; id++) {
+      for (let id = 1; id <= FINAL_LEVEL; id++) {
         const r = raw.levels?.[id];
         if (r)
           this.data.levels[id] = {
@@ -74,6 +88,17 @@ export class SaveManager {
           };
       }
       this.data.party = readParty(raw.party);
+      this.data.coins = safeNumber(raw.coins);
+      this.data.owned = Array.isArray(raw.owned)
+        ? [...new Set(["classic", ...raw.owned.filter((id: unknown) => typeof id === "string" && /^[a-z]{1,20}$/.test(id))])]
+        : ["classic"];
+      this.data.avatar = typeof raw.avatar === "string" && this.data.owned.includes(raw.avatar) ? raw.avatar : "classic";
+      for (const id of ["magnet", "shield"] as UpgradeId[])
+        this.data.upgrades[id] = Math.min(4, safeNumber(raw.upgrades?.[id]));
+      for (let id = 1; id <= FINAL_LEVEL; id++) {
+        const stars = safeNumber(raw.stars?.[id]);
+        if (stars) this.data.stars[id] = Math.min(3, stars);
+      }
       this.data.tutorial = raw.tutorial === "completed" || raw.tutorial === "skipped" ? raw.tutorial
         : this.data.unlocked > 1 || this.data.best > 0 ? "completed" : "new";
       const s = raw.settings ?? {};
@@ -137,8 +162,42 @@ export class SaveManager {
       tea: Math.max(old.tea, tea),
       golden: old.golden || golden,
     };
-    this.data.unlocked = Math.max(this.data.unlocked, Math.min(5, id + 1));
+    this.data.unlocked = Math.max(this.data.unlocked, Math.min(FINAL_LEVEL, id + 1));
     this.data.best = Math.max(this.data.best, total, score);
+    this.persist();
+  }
+  addCoins(amount: number) {
+    if (amount <= 0) return;
+    this.data.coins += Math.floor(amount);
+    this.persist();
+  }
+  /** Spends coins atomically; returns false and changes nothing when short. */
+  spend(amount: number) {
+    if (amount < 0 || this.data.coins < amount) return false;
+    this.data.coins -= amount;
+    return true;
+  }
+  buyAvatar(id: string, price: number) {
+    if (this.data.owned.includes(id) || !this.spend(price)) return false;
+    this.data.owned.push(id);
+    this.data.avatar = id;
+    this.persist();
+    return true;
+  }
+  equip(id: string) {
+    if (!this.data.owned.includes(id)) return false;
+    this.data.avatar = id;
+    this.persist();
+    return true;
+  }
+  upgrade(id: UpgradeId, price: number) {
+    if (this.data.upgrades[id] >= 4 || !this.spend(price)) return false;
+    this.data.upgrades[id]++;
+    this.persist();
+    return true;
+  }
+  rateLevel(id: number, stars: number) {
+    this.data.stars[id] = Math.max(this.data.stars[id] ?? 0, Math.min(3, stars));
     this.persist();
   }
   highScore(score: number) {

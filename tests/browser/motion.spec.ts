@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 test('120 Hz rendering advances between physics steps and steady view stays fixed', async ({page}) => {
-  await page.goto('/?testing=1'); await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await page.goto('/?testing=1'); await expect(page.locator('.boot')).toHaveCount(0); await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.evaluate(() => (window as any).__DASH__.start(1));
   await page.waitForFunction(() => (window as any).__DASH__.scene()?.player?.x > 240);
   const result = await page.evaluate(() => {
@@ -18,24 +18,26 @@ test('120 Hz rendering advances between physics steps and steady view stays fixe
 });
 
 test('hero cadence follows actual travel through acceleration, stops, ducking and respawn', async ({page}) => {
-  await page.goto('/?testing=1'); await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await page.goto('/?testing=1'); await expect(page.locator('.boot')).toHaveCount(0); await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.evaluate(() => (window as any).__DASH__.start(1));
   await page.waitForFunction(() => (window as any).__DASH__.scene()?.player?.x > 240);
   const result = await page.evaluate(() => {
     const d = (window as any).__DASH__, s = d.scene(), p = s.player; d.game.loop.sleep();
     p.state = 'run'; p.resetVisual(); p.bodyRef.blocked.down = true;
     const samples: any[] = [];
+    // Pose time follows ground distance: each pose covers the planted foot's measured travel.
+    const weights = [44, 47, 110, 22, 62, 40, 129, 22], total = weights.reduce((a, b) => a + b, 0), stride = total * 0.26;
+    const poseAt = (phase: number) => { let edge = 0; for (let i = 0; i < 8; i++) { edge += weights[i] / total; if (phase < edge - 1e-7) return i; } return 0; };
     let phase = 0;
     for (const speed of [0, 40, 80, 160, 240, 80, 0]) {
       p.capturePrevious(); p.x += speed * .1; p.syncMovement(.1);
-      const fps = speed === 0 ? 0 : 8 + 6 * speed / 260;
       if(speed === 0)phase = 0;
       for (const alpha of [0, .25, .5, .75, 1]) {
         p.present(alpha); p.animate(1000);
-        samples.push({speed, texture:p.visual.texture.key, fps:p.gait.animationFPS,
-          expected:Math.floor((phase + fps * .1 / 8 * alpha) * 8 + 1e-7) % 8});
+        samples.push({speed, texture:p.visual.texture.key, fps:p.gait.animationFPS, expectedFps: speed / stride * 8,
+          expected:poseAt((phase + speed * .1 / stride * alpha) % 1)});
       }
-      phase = (phase + fps * .1 / 8) % 1;
+      phase = (phase + speed * .1 / stride) % 1;
     }
     p.capturePrevious();p.x+=10;p.syncMovement(.1);p.present(1);p.animate(1000);
     phase = p.gait.sample(); p.state = 'duck'; p.setDucking(true); p.animate(1000);
@@ -46,7 +48,7 @@ test('hero cadence follows actual travel through acceleration, stops, ducking an
   });
   for (const sample of result.samples) {
     if(sample.speed===0){expect(sample.texture).toMatch(/^hero-idle/);expect(sample.fps).toBe(0);}
-    else {expect(sample.texture).toBe('hero-run-stride-'+sample.expected);expect(sample.fps).toBeGreaterThanOrEqual(8);expect(sample.fps).toBeLessThanOrEqual(14);}
+    else {expect(sample.texture).toBe('hero-run-stride-'+sample.expected);expect(sample.fps).toBeCloseTo(sample.expectedFps, 6);}
   }
   expect(result.duck).toBe(result.phase); expect(result.run).toBe(result.phase);
   expect(result.reset.slice(0,2)).toEqual([0, 210]);
@@ -54,7 +56,7 @@ test('hero cadence follows actual travel through acceleration, stops, ducking an
 });
 
 test('running, ducking, jumping and landing keep a constant visual scale and unchanged collision shapes', async ({page}) => {
-  await page.goto('/?testing=1'); await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await page.goto('/?testing=1'); await expect(page.locator('.boot')).toHaveCount(0); await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.evaluate(() => (window as any).__DASH__.start(1));
   await page.waitForFunction(() => (window as any).__DASH__.scene()?.player?.x > 240);
   const report=await page.evaluate(()=>{
@@ -83,7 +85,7 @@ test('running, ducking, jumping and landing keep a constant visual scale and unc
 });
 
 test('boy frame boundaries follow his interpolated position, including when hazards stop', async ({page}) => {
-  await page.goto('/?testing=1'); await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await page.goto('/?testing=1'); await expect(page.locator('.boot')).toHaveCount(0); await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.evaluate(() => (window as any).__DASH__.start(2));
   await page.waitForFunction(() => (window as any).__DASH__.scene()?.player?.x > 240);
   const samples = await page.evaluate(() => {
@@ -113,7 +115,7 @@ test('boy frame boundaries follow his interpolated position, including when haza
 });
 
 test('jump and landing gait stay identical at 15, 60 and 120 Hz with no running at the apex', async ({page}) => {
-  await page.goto('/?testing=1'); await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await page.goto('/?testing=1'); await expect(page.locator('.boot')).toHaveCount(0); await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.evaluate(() => (window as any).__DASH__.start(1));
   await page.waitForFunction(() => (window as any).__DASH__.scene()?.player?.x > 240);
   const reports = await page.evaluate(() => {

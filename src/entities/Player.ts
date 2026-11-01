@@ -3,6 +3,7 @@ import { StrideAnimator } from "../utils/StrideAnimator";
 import { HERO_RUN, HERO_DUCK, HERO_MAX_RUN_SPEED } from "../config/Locomotion";
 import { save } from "../systems/SaveManager";
 import { HERO_SCALE, heroFrame } from "../utils/ArcadeArt";
+import { avatarKey, ensureAvatar } from "../utils/AvatarArt";
 export type PlayerState =
   | "idle"
   | "run"
@@ -22,26 +23,40 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private previousX = 0;
   private previousY = 0;
   visual: Phaser.GameObjects.Sprite;
+  bubble: Phaser.GameObjects.Image;
+  avatar: string;
   lastGrounded = -1000;
   bufferedAt = -1000;
   held = false;
   duckHeld = false;
   ducking = false;
   wasGrounded = false;
+  /** Air jumps used since leaving the ground (one double jump allowed). */
+  airJumps = 0;
+  /** True while a mid-air Duck is slamming the hero to the ground. */
+  slamming = false;
   invulnerableUntil = 0;
   hurtUntil = 0;
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(scene: Phaser.Scene, x: number, y: number, avatar = save.data.avatar) {
     super(scene, x, y, "player-run-0");
     scene.add.existing(this);
     scene.physics.add.existing(this);
+    this.avatar = avatar;
+    ensureAvatar(scene.textures, avatar);
     this.setOrigin(0.5, 1).setDepth(20);
     // Keep collision geometry stable while giving the illustrated hero room to move.
     this.setVisible(false);
     this.visual = scene.add
-      .sprite(x, y, "hero-run-stride-0")
+      .sprite(x, y, avatarKey(avatar, "run-stride-0"))
       .setOrigin(0.5, 1)
       .setScale(HERO_SCALE)
       .setDepth(20);
+    this.bubble = scene.add
+      .image(x, y, "fx-bubble")
+      .setDisplaySize(76, 76)
+      .setDepth(21)
+      .setBlendMode(Phaser.BlendModes.SCREEN)
+      .setVisible(false);
 
     this.bodyRef.setSize(19, 58).setOffset(9, -10);
     this.setMaxVelocity(HERO_MAX_RUN_SPEED, 700);
@@ -55,10 +70,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.bufferedAt = now;
   }
   release() {
-    if (!this.held) return;
+    // Early release is handled by stronger rising gravity, so even a tap clears a crate.
     this.held = false;
-    if (this.bodyRef.velocity.y < -140)
-      this.setVelocityY(this.bodyRef.velocity.y * 0.48);
   }
   setDucking(active: boolean) {
     if (active === this.ducking) return;
@@ -78,22 +91,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   animate(now: number) {
     this.gait.setCycle(this.state === "duck" ? HERO_DUCK : HERO_RUN);
-    const key = this.state === "run"
-      ? this.gait.animationFPS === 0 ? heroFrame("idle", now) : `hero-run-stride-${this.gait.frame(this.visualAlpha)}`
-      : this.state === "duck" ? `hero-duck-${this.gait.frame(this.visualAlpha)}` : heroFrame(this.state, now);
+    const base = this.state === "run"
+      ? this.gait.animationFPS === 0 ? heroFrame("idle", now).slice(5) : `run-stride-${this.gait.frame(this.visualAlpha)}`
+      // Ducking is a power slide on the sandals: one low pose held while dust sprays, never a crouch-walk
+      // whose tiny steps would skate across the street.
+      : this.state === "duck" ? "duck-0" : heroFrame(this.state, now).slice(5);
+    const key = avatarKey(this.avatar, base);
     if (key !== this.lastFrame) {
       this.visual.setTexture(key);
       this.lastFrame = key;
     }
     this.visual.setAlpha(
-      now < this.invulnerableUntil ? (save.data.settings.steadyView || save.data.settings.reducedMotion ? 0.72 : Math.floor(now / 200) % 2 === 0 ? 0.35 : 1) : 1,
+      now < this.invulnerableUntil ? (save.data.settings.reducedMotion ? 0.72 : Math.floor(now / 100) % 2 === 0 ? 0.4 : 1) : 1,
     );
   }
   capturePrevious() { this.previousX = this.x; this.previousY = this.y; this.strideState = this.state; }
   present(alpha: number) {
     const snap = Math.abs(this.x - this.previousX) > 80 || Math.abs(this.y - this.previousY) > 80;
     this.visualAlpha = snap ? 1 : alpha;
-    this.visual.setPosition(snap ? this.x : Phaser.Math.Linear(this.previousX, this.x, alpha), (snap ? this.y : Phaser.Math.Linear(this.previousY, this.y, alpha)) + 1);
+    const x = snap ? this.x : Phaser.Math.Linear(this.previousX, this.x, alpha);
+    this.visual.setPosition(x, (snap ? this.y : Phaser.Math.Linear(this.previousY, this.y, alpha)) + 1);
+    this.bubble.setPosition(this.visual.x, this.visual.y - (this.ducking ? 20 : 27));
   }
   land() {
     // Compression is drawn into the poses. Never squash/stretch the whole character.
@@ -103,6 +121,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   resetVisual() {
     this.setDucking(false);
     this.duckHeld = false;
+    this.airJumps = 0;
+    this.slamming = false;
     this.scene.tweens.killTweensOf(this.visual);
     this.visual.setScale(HERO_SCALE).setAngle(0).clearTint().setAlpha(1);
     this.gait.reset();
@@ -111,8 +131,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   destroy(fromScene?: boolean) {
     if (!this.scene) return;
-
     this.visual.destroy();
+    this.bubble.destroy();
     super.destroy(fromScene);
   }
 }

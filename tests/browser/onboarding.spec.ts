@@ -2,7 +2,9 @@ import { test, expect, type Page } from '@playwright/test';
 test.use({storageState:{cookies:[],origins:[]}});
 async function ready(page: Page) {
   await page.goto('/?testing=1');
-  await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await expect(page.locator('.boot')).toHaveCount(0);
+  await page.waitForFunction(() => (window as any).__DASH__?.game.scene.isActive('Menu'));
+  await page.evaluate(() => (window as any).__DASH__.action('title-start'));
 }
 test('fresh player learns both moves with normal physics, retries safely, and saves completion', async ({page}) => {
   await ready(page);
@@ -11,12 +13,13 @@ test('fresh player learns both moves with normal physics, retries safely, and sa
   const x = await page.evaluate(() => (window as any).__DASH__.scene().player.x);
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => (window as any).__DASH__.scene().player.x)).toBe(x);
-  // A very short hop fails the lesson safely; no campaign points or hearts change.
+  // Even a very short tap is a full jump on the first lesson, so new players clear the box.
   await page.keyboard.down('Space');await page.waitForTimeout(35);await page.keyboard.up('Space');
+  await expect(page.locator('.practice-card')).toContainText('Hold Duck');
+  // Letting go of Duck too early fails the lesson safely; no campaign points or hearts change.
+  await page.keyboard.down('ArrowDown');await page.waitForTimeout(30);await page.keyboard.up('ArrowDown');
   await expect(page.locator('.practice-card')).toContainText('Try again');
   expect(await page.evaluate(() => {const d=(window as any).__DASH__;return {hearts:d.scene().hearts,lives:d.scene().lives,score:d.scene().score.score,levels:d.save.data.levels,best:d.save.data.best};})).toEqual({hearts:3,lives:3,score:0,levels:{},best:0});
-  await page.keyboard.down('Space');await page.waitForTimeout(600);await page.keyboard.up('Space');
-  await expect(page.locator('.practice-card')).toContainText('Hold Duck');
   await page.locator('[data-action="pause"]').click();
   await page.locator('[data-action="resume"]').click();
   await expect(page.locator('.practice-card')).toContainText('Hold Duck');

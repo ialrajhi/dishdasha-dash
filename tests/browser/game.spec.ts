@@ -5,6 +5,7 @@ async function ready(page: Page) {
   await page.waitForFunction(
     () => !!(window as any).__DASH__?.game.scene.isActive("Menu"),
   );
+  await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.waitForTimeout(450);
 }
 test("title screen, gameplay, pause and options", async ({ page }) => {
@@ -12,7 +13,7 @@ test("title screen, gameplay, pause and options", async ({ page }) => {
   page.on("pageerror", (e) => errors.push(e.message));
   await ready(page);
   await page.screenshot({ path: "test-results/menu.png" });
-  await expect(page.locator(".game-title")).toBeVisible();
+  await expect(page.locator(".menu-screen .logo")).toBeVisible();
   await page.locator('[data-action="start"]').click();
   await page.waitForFunction(
     () => (window as any).__DASH__.scene().player?.x > 250,
@@ -99,7 +100,7 @@ test("real obstacle damage, death, checkpoint respawn, and game over", async ({
     "{const s=window.__DASH__.scene();s.damage(true);s.damage(true);s.damage(true)}",
   );
   await expect(page.locator(".view-over")).toBeVisible();
-  await expect(page.locator(".view-over h1")).toContainText("One more try?");
+  await expect(page.locator(".view-over .big-title")).toContainText("One more try?");
   await page.locator('[data-action="restart"]').click();
   await page.waitForTimeout(200);
   expect(await app(page, "window.__DASH__.snapshot().lives")).toBe(3);
@@ -109,7 +110,7 @@ test("all five completion transitions, victory and persistent unlocks", async ({
 }) => {
   await ready(page);
   await page.locator('[data-action="start"]').click();
-  for (let level = 1; level <= 5; level++) {
+  for (let level = 1; level <= 10; level++) {
     await page.waitForFunction(
       (id) =>
         (window as any).__DASH__.scene().level?.id === id &&
@@ -121,20 +122,22 @@ test("all five completion transitions, victory and persistent unlocks", async ({
       "{const s=window.__DASH__.scene();s.player.bodyRef.reset(s.course.length-10,300)}",
     );
     await expect(
-      page.locator(level === 5 ? ".view-victory" : ".view-complete"),
+      page.locator(level === 10 ? ".view-victory" : ".view-complete"),
     ).toBeVisible();
     expect(await app(page, "window.__DASH__.save.data.unlocked")).toBe(
-      Math.min(5, level + 1),
+      Math.min(10, level + 1),
     );
-    if (level < 5) await page.locator('[data-action="next"]').click();
+    if (level < 10) await page.locator('[data-action="next"]').click();
   }
-  await expect(page.locator(".victory-modal")).toContainText("You made it!");
+  await expect(page.locator(".card.victory")).toContainText("You made it!");
   await page.screenshot({ path: "test-results/victory.png" });
   await page.locator('[data-action="levels"]').click();
-  expect(await page.locator(".level-card:not(:disabled)").count()).toBe(5);
+  expect(await page.locator(".level-card:not(:disabled)").count()).toBe(10);
   await page.reload();
+  await page.waitForFunction(() => !!(window as any).__DASH__?.game.scene.isActive("Menu"));
+  await page.keyboard.press("Enter");
   await page.locator('[data-action="levels"]').click();
-  expect(await page.locator(".level-card:not(:disabled)").count()).toBe(5);
+  expect(await page.locator(".level-card:not(:disabled)").count()).toBe(10);
   await page.screenshot({ path: "test-results/level-select.png" });
 });
 test("touch jump and mobile portrait guidance", async ({ browser }) => {
@@ -148,7 +151,7 @@ test("touch jump and mobile portrait guidance", async ({ browser }) => {
   await page.locator('[data-action="start"]').tap();
   await page.waitForTimeout(300);
   const jumpBounds = await page.locator("#jump-button").boundingBox();
-  const cabinetBounds = await page.locator(".game-cabinet").boundingBox();
+  const cabinetBounds = await page.locator(".frame").boundingBox();
   expect(jumpBounds!.x).toBeGreaterThan(
     cabinetBounds!.x + cabinetBounds!.width * 0.7,
   );

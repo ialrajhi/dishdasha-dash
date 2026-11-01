@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 async function enter(page: any) {
   await page.goto('/?testing=1');
-  await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await expect(page.locator('.boot')).toHaveCount(0); await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.locator('[data-action="dance"]').click();
   await expect(page.locator('.dance-guest:not(:disabled)')).toHaveCount(12);
 }
@@ -34,11 +34,11 @@ test('dance floor supports placement, movement, music, undo, pause and persisten
   await page.waitForTimeout(180);
   expect(await page.evaluate(() => (window as any).__DASH__.ui.dance.elapsed)).toBe(elapsed);
   await page.locator('.dance-room').screenshot({ path: 'test-results/go-dance-desktop.png' });
-  await page.reload(); await expect(page.locator('.asset-loading')).toHaveCount(0); await page.locator('[data-action="dance"]').click();
+  await page.reload(); await expect(page.locator('.boot')).toHaveCount(0); await page.evaluate(() => (window as any).__DASH__.action('title-start')); await page.locator('[data-action="dance"]').click();
   await expect(page.locator('.dance-count')).toHaveText('13 / 24'); await expect(page.locator('#dance-track')).toHaveValue('5');
   await page.locator('#dance-clear').click(); await expect(page.locator('.dance-empty')).toBeVisible();
   await page.locator('#dance-undo').click(); await expect(page.locator('.dance-count')).toHaveText('13 / 24');
-  await page.locator('.dance-header [data-action="back"]').click(); await expect(page.locator('.game-title')).toBeVisible();
+  await page.locator('.dance-header [data-action="back"]').click(); await expect(page.locator('.menu-screen .logo')).toBeVisible();
   expect(errors).toEqual([]);
 });
 test('dance touch placement and small screen controls remain usable', async ({ browser }) => {

@@ -9,8 +9,10 @@ import { LEVELS } from "../levels/levels";
 /** Source bounds are hand-reviewed: several poses cross their nominal grid cell. */
 export const HERO_SCALE = 0.26;
 export const floorY = sceneryLayout.floorY;
+/** One painted street per art id; night stages reuse their day stage's street. */
+const STREETS = LEVELS.filter((level) => level.id === level.art);
 export function preloadArcadeArt(scene: Phaser.Scene) {
-  for (const level of LEVELS)
+  for (const level of STREETS)
     scene.load.image(`scene-${level.id}`, `${import.meta.env.BASE_URL}assets/arcade/${level.theme}.webp`);
   for (const key of ["hero-sheet", "props-sheet", "extra-sheet", "hero-run8-sheet", "kid-run-sheet", "hero-duck-sheet"])
     scene.load.image(key, `${import.meta.env.BASE_URL}assets/arcade/${key}.webp`);
@@ -142,6 +144,86 @@ function loopTexture(
   ctx.drawImage(edge, canvas.width - overlap, 0);
   scene.textures.addCanvas(key, canvas);
 }
+/**
+ * Moonlit copy of a painting: multiply by a night gradient, bring warm light sources (lanterns, lamps,
+ * lit signs) back with a soft bloom, and scatter stars and a moon only over smooth, dark sky.
+ */
+function nightGrade(source: HTMLCanvasElement, withSky: boolean, seed: number) {
+  const w = source.width, h = source.height;
+  const out = document.createElement("canvas");
+  out.width = w;
+  out.height = h;
+  const ctx = out.getContext("2d", { willReadFrequently: true })!;
+  const original = source.getContext("2d", { willReadFrequently: true })!.getImageData(0, 0, w, h);
+  // Warm, bright, saturated pixels become light sources.
+  const lights = document.createElement("canvas");
+  lights.width = w;
+  lights.height = h;
+  const lctx = lights.getContext("2d")!;
+  const glow = lctx.createImageData(w, h);
+  const src = original.data, g = glow.data;
+  for (let i = 0; i < src.length; i += 4) {
+    const r = src[i], gr = src[i + 1], b = src[i + 2];
+    const lum = 0.299 * r + 0.587 * gr + 0.114 * b;
+    // Near-white cores (a painted sun) stay dark; lamps and lanterns are warmer and dimmer.
+    if (lum > 165 && lum < 226 && r > b + 70 && gr > b + 25) {
+      g[i] = r; g[i + 1] = gr; g[i + 2] = b; g[i + 3] = Math.min(255, (lum - 165) * 3);
+    }
+  }
+  lctx.putImageData(glow, 0, 0);
+  ctx.drawImage(source, 0, 0);
+  ctx.globalCompositeOperation = "multiply";
+  const shade = ctx.createLinearGradient(0, 0, 0, h);
+  shade.addColorStop(0, withSky ? "#1c2350" : "#3a4278");
+  shade.addColorStop(0.55, "#4a5288");
+  shade.addColorStop(1, "#7a7fa8");
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = "lighter";
+  ctx.filter = "blur(10px)";
+  ctx.globalAlpha = 0.55;
+  ctx.drawImage(lights, 0, 0);
+  ctx.filter = "none";
+  ctx.globalAlpha = 0.85;
+  ctx.drawImage(lights, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+  if (!withSky) return out;
+  const graded = ctx.getImageData(0, 0, w, h).data;
+  const skyAt = (x: number, y: number) => {
+    const i = (Math.floor(y) * w + Math.floor(x)) * 4;
+    const j = (Math.floor(y) * w + Math.min(w - 1, Math.floor(x) + 9)) * 4;
+    const k = (Math.min(h - 1, Math.floor(y) + 9) * w + Math.floor(x)) * 4;
+    const smooth = Math.abs(graded[i] - graded[j]) + Math.abs(graded[i + 2] - graded[j + 2]) + Math.abs(graded[i + 2] - graded[k + 2]) < 22;
+    return smooth && graded[i + 2] >= graded[i] && graded[i] + graded[i + 1] + graded[i + 2] < 330;
+  };
+  let state = seed * 9301 + 49297;
+  const random = () => ((state = (state * 9301 + 49297) % 233280) / 233280);
+  for (let n = 0; n < 420; n++) {
+    const x = random() * w, y = random() * h * 0.42;
+    if (!skyAt(x, y)) continue;
+    const size = random() < 0.12 ? 2.2 : 1.1;
+    ctx.fillStyle = `rgba(255,255,240,${0.45 + random() * 0.5})`;
+    ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+  }
+  // A moon where the sky is open, searched from the upper right.
+  for (const [mx, my] of [[0.84, 0.12], [0.7, 0.1], [0.55, 0.09], [0.3, 0.1]]) {
+    const x = mx * w, y = my * h, r = h * 0.045;
+    if (![[0, 0], [-r, 0], [r, 0], [0, -r], [0, r]].every(([dx, dy]) => skyAt(x + dx, y + dy))) continue;
+    const halo = ctx.createRadialGradient(x, y, r * 0.6, x, y, r * 4);
+    halo.addColorStop(0, "rgba(220,230,255,.35)");
+    halo.addColorStop(1, "rgba(220,230,255,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(x - r * 4, y - r * 4, r * 8, r * 8);
+    ctx.fillStyle = "#f4f1dc";
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(190,190,170,.35)";
+    ctx.beginPath(); ctx.arc(x - r * 0.3, y - r * 0.2, r * 0.22, 0, Math.PI * 2); ctx.arc(x + r * 0.35, y + r * 0.3, r * 0.15, 0, Math.PI * 2); ctx.fill();
+    break;
+  }
+  return out;
+}
+
 export function prepareArcadeArt(scene: Phaser.Scene) {
   const duck = scene.textures.get("hero-duck-sheet").getSourceImage() as HTMLImageElement;
   for (let i = 0; i < 4; i++) {
@@ -174,7 +256,7 @@ export function prepareArcadeArt(scene: Phaser.Scene) {
   };
   for (const [name, bounds] of Object.entries(extra))
     crop(scene, "extra-sheet", `arcade-${name}`, bounds);
-  for (const level of LEVELS) {
+  for (const level of STREETS) {
     const source = scene.textures
       .get(`scene-${level.id}`)
       .getSourceImage() as HTMLImageElement;
@@ -198,6 +280,8 @@ export function prepareArcadeArt(scene: Phaser.Scene) {
       ctx.fillText(label, (left + right) / 2, (top + bottom) / 2);
     }
     scene.textures.addCanvas(`scenery-${level.id}`, painted);
+    const nightly = LEVELS.some((l) => l.night && l.art === level.id);
+    if (nightly) scene.textures.addCanvas(`scenery-night-${level.id}`, nightGrade(painted, true, level.id));
     const canvas = document.createElement("canvas");
     canvas.width = source.width;
     canvas.height = source.height - floorY[level.id - 1];
@@ -215,6 +299,7 @@ export function prepareArcadeArt(scene: Phaser.Scene) {
         canvas.height,
       );
     loopTexture(scene, `street-${level.id}`, canvas, 64);
+    if (nightly) loopTexture(scene, `street-night-${level.id}`, nightGrade(canvas, false, level.id), 64);
     scene.textures.remove(`scene-${level.id}`);
   }
   for (const sheet of ["hero-sheet", "props-sheet", "extra-sheet", "hero-run8-sheet", "kid-run-sheet", "hero-duck-sheet"])
