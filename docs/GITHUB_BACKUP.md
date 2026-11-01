@@ -12,9 +12,9 @@ default branch; the original `codex/dishdasha-dash` branch is also retained.
 The private release `backup-2026-11-01` holds the larger files normally excluded
 from Git:
 
-- `desktop-windows.tar`: all existing Windows release ZIPs, versions 1.1.0–1.4.1.
-- `desktop-macos.tar`: all existing macOS release ZIPs, versions 1.1.0–1.4.1.
-- `android-builds.tar`: every existing Android APK, unsigned AAB, and build manifest,
+- `desktop-windows.tar.zst`: all existing Windows release ZIPs, versions 1.1.0–1.4.1.
+- `desktop-macos.tar.zst`: all existing macOS release ZIPs, versions 1.1.0–1.4.1.
+- `android-builds.tar.zst`: every existing Android APK, unsigned AAB, and build manifest,
   through version 1.5.2.
 - `desktop-unpacked.tar.gz`: the unpacked desktop applications, including symlinks.
 - `supporting-files.tar.gz`: the Google Play 1.5.0 kit, release QA evidence, staged
@@ -27,7 +27,9 @@ commit, plus `SHA256SUMS.txt` for checking the downloaded archives.
 
 ## Restore on another computer
 
-Authenticate GitHub CLI with the account that can access the private repository:
+Install GitHub CLI and Zstandard (`zstd`), then authenticate GitHub CLI with the
+account that can access the private repository. For example, Homebrew on macOS
+provides them with `brew install gh zstd`.
 
 ```sh
 gh repo clone ialrajhi/dishdasha-dash
@@ -36,8 +38,11 @@ gh release download backup-2026-11-01 --dir /tmp/dishdasha-backup
 cd /tmp/dishdasha-backup
 shasum -a 256 -c SHA256SUMS.txt
 cd -
-for archive in /tmp/dishdasha-backup/*.tar /tmp/dishdasha-backup/*.tar.gz; do
+for archive in /tmp/dishdasha-backup/*.tar.gz; do
   tar -xf "$archive"
+done
+for archive in /tmp/dishdasha-backup/*.tar.zst; do
+  zstd -d -c "$archive" | tar -xf -
 done
 npm ci
 npm run dev
