@@ -42,7 +42,7 @@ for archive in /tmp/dishdasha-backup/*.tar.gz; do
   tar -xf "$archive"
 done
 for archive in /tmp/dishdasha-backup/*.tar.zst; do
-  zstd -d -c "$archive" | tar -xf -
+  zstd -d --memory=512MB -c "$archive" | tar -xf -
 done
 npm ci
 npm run dev
