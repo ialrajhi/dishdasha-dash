@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { StrideAnimator } from "../src/utils/StrideAnimator";
+import { HERO_RUN, HERO_RUN_WEIGHTS } from "../src/config/Locomotion";
 
 const run = { strideLength: 80, loopDuration: .5, frameCount: 12 };
 
@@ -118,5 +119,47 @@ describe("readable eight-pose hero cadence", () => {
       expect(gait.sample()).toBeCloseTo(3/8,9); // 11 fps: one full eight-pose loop plus 3 frames
       expect(gait.frame()).toBe(3);
     }
+  });
+});
+
+describe("hero run cycle", () => {
+  const total = HERO_RUN_WEIGHTS.reduce((a, b) => a + b, 0);
+  const poseFor = (distance: number, hz = 60, speed = 200) => {
+    const gait = new StrideAnimator(HERO_RUN);
+    const steps = Math.round(distance / speed * hz);
+    for (let i = 0; i < steps; i++) gait.advance(speed / hz, 1 / hz);
+    return gait.frame();
+  };
+  it("gives the left and right steps the same ground distance, so neither leg limps", () => {
+    const step = (from: number) => HERO_RUN_WEIGHTS.slice(from, from + 4).reduce((a, b) => a + b, 0);
+    expect(step(0)).toBeCloseTo(step(4), 9);
+    expect(HERO_RUN.strideLength).toBeCloseTo(total * 0.26, 9);
+  });
+  it("switches poses halfway between their ground matches", () => {
+    const gait = new StrideAnimator(HERO_RUN);
+    const at = (atlas: number) => { gait.reset(atlas / total); return gait.frame(); };
+    expect(at(0)).toBe(0);
+    expect(at(19)).toBe(0); // just before half of the 39 px gap to pose 1
+    expect(at(20)).toBe(1);
+    expect(at(39 + 50 + 58)).toBe(2); // the long passing gap is shared with the push-off pose
+    expect(at(39 + 50 + 59)).toBe(3);
+    expect(at(total - 0.5)).toBe(0); // pose 7 hands back to contact at the loop seam
+    expect(at(total - 2)).toBe(7);
+  });
+  it("shows every pose in order with no skipped frames, at any frame rate", () => {
+    for (const hz of [30, 60, 120, 144]) {
+      const gait = new StrideAnimator(HERO_RUN), seen: number[] = [];
+      for (let i = 0; i < hz * 2; i++) {
+        gait.advance(160 / hz, 1 / hz);
+        const frame = gait.frame();
+        if (seen[seen.length - 1] !== frame) seen.push(frame);
+      }
+      for (let i = 1; i < seen.length; i++) expect(seen[i]).toBe((seen[i - 1] + 1) % 8);
+      expect(new Set(seen).size).toBe(8);
+    }
+  });
+  it("lands on the same pose for the same distance whatever the frame rate", () => {
+    for (const distance of [40, 95, 210, 333])
+      expect(new Set([30, 60, 120, 144].map((hz) => poseFor(distance, hz))).size).toBe(1);
   });
 });

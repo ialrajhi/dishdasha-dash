@@ -9,7 +9,9 @@ import { desktop } from "../platform/Platform";
 import { LEVELS, FINAL_LEVEL, type LevelConfig } from "../levels/levels";
 import { campaign, type LevelResult } from "../systems/ScoreManager";
 import { AVATARS, UPGRADES, avatarById, powerSeconds } from "../systems/Economy";
-import { avatarPreview } from "../utils/AvatarArt";
+import { avatarKey, avatarPreview, ensureAvatar } from "../utils/AvatarArt";
+import { StrideAnimator } from "../utils/StrideAnimator";
+import { HERO_ATLAS_SCALE, HERO_RUN } from "../config/Locomotion";
 import { iconURL } from "../utils/FxArt";
 import type { PickupKind } from "../entities/Collectible";
 import type { Snapshot } from "../scenes/GameScene";
@@ -63,7 +65,7 @@ export class GameUI {
   private lastHearts = 3;
   private textures?: Phaser.Textures.TextureManager;
   private previews = new Map<string, string>();
-  private previewTimer?: number;
+  private previewFrame = 0;
   private timers: number[] = [];
   private hoverAt = 0;
   private storageNotice = document.createElement("button");
@@ -203,7 +205,7 @@ export class GameUI {
   private clearTimers() {
     this.timers.forEach((id) => window.clearTimeout(id));
     this.timers = [];
-    window.clearInterval(this.previewTimer);
+    window.cancelAnimationFrame(this.previewFrame);
     window.cancelAnimationFrame(this.scoreFrame);
   }
   private later(ms: number, fn: () => void) {
@@ -339,7 +341,7 @@ export class GameUI {
       : owned
         ? `<button class="btn wide primary" data-action="equip" data-value="${pick.id}">${icon("shirt")}<span>${bilingual("البس", "Equip")}</span></button>`
         : `<button class="btn wide primary buy ${pick.price > save.data.coins ? "short" : ""}" data-action="buy-avatar" data-value="${pick.id}">${coin}<span>${number(pick.price)}</span></button>`;
-    return `<div class="shop-body"><div class="showcase" style="--trail:${pick.trail ? "#ffd75e" : "transparent"}"><div class="showcase-floor"></div><img id="showcase-img" src="${this.preview(pick.id)}" alt="${name(pick)}"/><strong>${name(pick)}</strong><small>${pick.trail ? bilingual("يترك أثر ذهبي ✦", "Leaves a golden trail ✦") : owned ? bilingual("عندك", "Owned") : bilingual("شخصية جديدة", "New outfit")}</small>${action}<p class="shop-msg" id="shop-msg" role="status"></p></div><div class="avatar-grid">${AVATARS.map((a) => {
+    return `<div class="shop-body"><div class="showcase" style="--trail:${pick.trail ? "#ffd75e" : "transparent"}"><div class="showcase-floor"></div><canvas id="showcase-img" width="288" height="252" role="img" aria-label="${name(pick)}"></canvas><strong>${name(pick)}</strong><small>${pick.trail ? bilingual("يترك أثر ذهبي ✦", "Leaves a golden trail ✦") : owned ? bilingual("عندك", "Owned") : bilingual("شخصية جديدة", "New outfit")}</small>${action}<p class="shop-msg" id="shop-msg" role="status"></p></div><div class="avatar-grid">${AVATARS.map((a) => {
       const has = save.data.owned.includes(a.id);
       return `<button class="avatar-card ${a.id === pick.id ? "picked" : ""} ${save.data.avatar === a.id ? "equipped" : ""}" data-action="pick-avatar" data-value="${a.id}" aria-pressed="${a.id === pick.id}"><img src="${this.preview(a.id)}" alt=""/><strong>${name(a)}</strong><span class="tag">${save.data.avatar === a.id ? `${icon("check")}${bilingual("لابسها", "On")}` : has ? bilingual("عندك", "Owned") : `${coin}${number(a.price)}`}</span></button>`;
     }).join("")}</div></div>`;
@@ -352,14 +354,36 @@ export class GameUI {
     }).join("")}<p class="foot-note">${bilingual("التقط المغناطيس والدرع بالمراحل. التطوير يطوّل مدتهم.", "Pick up magnets and shields in levels. Upgrades make them last longer.")}</p><p class="shop-msg" id="shop-msg" role="status"></p></div>`;
   }
   private animateShopPreview() {
-    if (this.shopTab !== "avatars" || save.data.settings.reducedMotion) return;
-    // A looping run cycle sells the outfit better than a still pose.
-    const frames = Array.from({ length: 8 }, (_, i) => this.preview(this.shopPick, `run-stride-${i}`));
-    let i = 0;
-    this.previewTimer = window.setInterval(() => {
-      const img = document.querySelector<HTMLImageElement>("#showcase-img");
-      if (img) img.src = frames[i++ % frames.length];
-    }, 85);
+    const canvas = document.querySelector<HTMLCanvasElement>("#showcase-img");
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx || !this.textures) return;
+    const textures = this.textures, id = this.shopPick;
+    ensureAvatar(textures, id);
+    // The showcase runs on the game's own stride clock: same pose timing, real elapsed time, and a
+    // street that scrolls at the matching speed so each planted sandal grips the ground.
+    const speed = 200, scale = 288 / 384, gait = new StrideAnimator(HERO_RUN);
+    let travelled = 0, last = performance.now();
+    const draw = (now: number) => {
+      if (!canvas.isConnected) return;
+      // A frame's timestamp can predate the performance.now() taken when the loop started.
+      const seconds = Math.min(0.1, Math.max(0, (now - last) / 1000));
+      last = now;
+      const moving = !save.data.settings.reducedMotion;
+      if (moving) {
+        gait.advance(speed * seconds, seconds);
+        travelled += speed * seconds;
+      }
+      const pose = moving ? `run-stride-${gait.frame()}` : "idle";
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(textures.get(avatarKey(id, pose)).getSourceImage() as CanvasImageSource, 0, 0, 384, 320, 0, 0, 288, 240);
+      // Paving seams under the feet, offset by the same distance the hero has covered.
+      const shift = (travelled / HERO_ATLAS_SCALE * scale) % 48;
+      ctx.fillStyle = "#ffffff1f";
+      ctx.fillRect(0, 239, canvas.width, 2);
+      for (let x = -shift; x < canvas.width; x += 48) ctx.fillRect(Math.round(x), 241, 2, 9);
+      if (moving) this.previewFrame = window.requestAnimationFrame(draw);
+    };
+    draw(last);
   }
   shopMessage(text: string, good = false) {
     const el = document.querySelector<HTMLElement>("#shop-msg");

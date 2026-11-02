@@ -25,9 +25,10 @@ test('hero cadence follows actual travel through acceleration, stops, ducking an
     const d = (window as any).__DASH__, s = d.scene(), p = s.player; d.game.loop.sleep();
     p.state = 'run'; p.resetVisual(); p.bodyRef.blocked.down = true;
     const samples: any[] = [];
-    // Pose time follows ground distance: each pose covers the planted foot's measured travel.
-    const weights = [44, 47, 110, 22, 62, 40, 129, 22], total = weights.reduce((a, b) => a + b, 0), stride = total * 0.26;
-    const poseAt = (phase: number) => { let edge = 0; for (let i = 0; i < 8; i++) { edge += weights[i] / total; if (phase < edge - 1e-7) return i; } return 0; };
+    // Pose time follows ground distance: each pose is shown from halfway after the previous pose's
+    // ground match to halfway before the next, using the planted foot's measured travel.
+    const weights = [39, 50, 117.5, 15.5, 53, 40.5, 127, 1.5], total = weights.reduce((a, b) => a + b, 0), stride = total * 0.26;
+    const poseAt = (phase: number) => { let start = 0; for (let i = 0; i < 8; i++) { if (phase < (start + weights[i] / 2) / total - 1e-7) return i; start += weights[i]; } return 0; };
     let phase = 0;
     for (const speed of [0, 40, 80, 160, 240, 80, 0]) {
       p.capturePrevious(); p.x += speed * .1; p.syncMovement(.1);
@@ -126,7 +127,8 @@ test('jump and landing gait stay identical at 15, 60 and 120 Hz with no running 
       p.bodyRef.reset(210, 300); p.setVelocity(145, 0); p.setGravityY(0);
       p.state = 'run'; p.lastGrounded = 0; p.wasGrounded = true; p.held = true;
       p.bufferedAt = 0; p.resetVisual();
-      let apexSamples = 0, wrongPoses = 0, airPhaseChanges = 0;
+      let apexSamples = 0, wrongPoses = 0, airPhaseChanges = 0, idleFlashes = 0;
+      let wasAirborne = false;
       const originalTick = s.tick.bind(s);
       s.tick = (dt:number) => {
         const before = p.gait.sample();
@@ -138,15 +140,20 @@ test('jump and landing gait stay identical at 15, 60 and 120 Hz with no running 
         // At the end of each airborne step, syncMovement must have frozen the phase.
         if (p.y < 290 && p.gait.sample(0) !== before) airPhaseChanges++;
       };
-      for (let i = 0; i < hz * 2; i++) s.update(i * 1000 / hz, 1000 / hz);
+      for (let i = 0; i < hz * 2; i++) {
+        s.update(i * 1000 / hz, 1000 / hz);
+        // Landing goes straight back into the stride; the standing pose never flashes mid-run.
+        if (p.y < 290) wasAirborne = true;
+        if (wasAirborne && p.state === 'run' && /idle/.test(p.visual.texture.key)) idleFlashes++;
+      }
       s.tick = originalTick;
-      reports.push({hz, apexSamples, wrongPoses, airPhaseChanges, x:p.x, y:p.y, phase:p.gait.sample(), frame:p.visual.texture.key});
+      reports.push({hz, apexSamples, wrongPoses, airPhaseChanges, idleFlashes, x:p.x, y:p.y, phase:p.gait.sample(), frame:p.visual.texture.key});
     }
     return reports;
   });
   for (const report of reports) {
     expect(report.apexSamples).toBeGreaterThan(0);
-    expect(report.wrongPoses).toBe(0); expect(report.airPhaseChanges).toBe(0);
+    expect(report.wrongPoses).toBe(0); expect(report.airPhaseChanges).toBe(0); expect(report.idleFlashes).toBe(0);
     expect(report.x).toBeCloseTo(reports[0].x, 7);
     expect(report.y).toBeCloseTo(reports[0].y, 7);
     expect(report.phase).toBeCloseTo(reports[0].phase, 7);
