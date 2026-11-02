@@ -1,12 +1,13 @@
 import { test, expect } from "@playwright/test";
 
-test("jump height, coyote time, buffering, and no double jump", async ({
+test("jump height, coyote time, buffering, and one double jump", async ({
   page,
 }) => {
   await page.goto("/?testing=1");
   await page.waitForFunction(
     () => !!(window as any).__DASH__?.game.scene.isActive("Menu"),
   );
+  await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.locator('[data-action="start"]').click();
   await page.waitForTimeout(150);
   const results = await page.evaluate(() => {
@@ -47,15 +48,25 @@ test("jump height, coyote time, buffering, and no double jump", async ({
     for (let i = 0; i < 9; i++) step();
     const buffered = s.player.bodyRef.velocity.y;
     const before = s.player.bodyRef.velocity.y;
+    s.releaseJump();
     s.pressJump();
     step();
     const second = s.player.bodyRef.velocity.y;
-    return { short, high, coyote, buffered, before, second };
+    s.clearInput();
+    for (let i = 0; i < 4; i++) step();
+    s.pressJump();
+    step();
+    const third = s.player.bodyRef.velocity.y;
+    return { short, high, coyote, buffered, before, second, third };
   });
   expect(results.high).toBeLessThan(results.short - 30);
   expect(results.coyote).toBeLessThan(-300);
   expect(results.buffered).toBeLessThan(-250);
-  expect(results.second).toBeGreaterThan(results.before);
+  // A second press in the air is a double jump; a third press is ignored.
+  expect(results.second).toBeLessThan(-300);
+  expect(results.third).toBeGreaterThan(results.second);
+  // A tap still clears a 35 px crate.
+  expect(300 - results.short).toBeGreaterThan(45);
 });
 
 test("golden pickup persists, reset confirms, and every menu is reachable", async ({
@@ -65,16 +76,17 @@ test("golden pickup persists, reset confirms, and every menu is reachable", asyn
   await page.waitForFunction(
     () => !!(window as any).__DASH__?.game.scene.isActive("Menu"),
   );
+  await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   await page.locator('[data-action="how"]').click();
   await expect(page.locator(".how-grid")).toBeVisible();
   await page.locator(".back-button").click();
   await page.locator('[data-action="high"]').click();
-  await expect(page.locator(".record-list > div")).toHaveCount(5);
+  await expect(page.locator(".record-list > div")).toHaveCount(10);
   await page.locator('[data-action="start"]').click();
   await page.waitForTimeout(200);
   await page.evaluate(() => {
     const s = (window as any).__DASH__.scene();
-    const golden = s.collectibles.find((c: any) => c.spec.golden);
+    const golden = s.collectibles.find((c: any) => c.spec.kind === "golden");
     s.player.bodyRef.reset(golden.x, golden.y + 20);
   });
   await page.waitForFunction(
@@ -112,6 +124,7 @@ test("golden pickup persists, reset confirms, and every menu is reachable", asyn
   await page.waitForFunction(
     () => !!(window as any).__DASH__?.game.scene.isActive("Menu"),
   );
+  await page.evaluate(() => (window as any).__DASH__.action('title-start'));
   expect(
     await page.evaluate(() => (window as any).__DASH__.save.data.unlocked),
   ).toBe(1);

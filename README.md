@@ -4,6 +4,19 @@ A complete, original Kuwait-themed browser arcade game built with **Phaser 3, Ty
 
 The arcade edition uses original illustrated Kuwait backgrounds and transparent sprite atlases, bundled in `public/assets/arcade/`. No third-party image service, backend, or audio download is needed at runtime. Sound and music use Web Audio; Arabic and English fonts are bundled locally. A loading screen protects the game until all art is ready and provides a retry if a download fails.
 
+## What’s new in 2.0
+
+- **Startup flow:** tea-glass loading screen → animated title (“Press any key / Tap to start”) with the hero running down the street → full-screen main menu. No web-page header or footer: the game fills a 16:9 frame and the letterbox shows a blurred copy of the stage art.
+- **Tighter controls:** a tap is a reliable short hop (it clears every crate), holding gives a full leap, **double jump** in mid-air, and **Duck in mid-air slams** you to the ground.
+- **Coins, shop and avatars:** spinning coin trails (arcs over pits, high lines that need a jump) fill the gap between obstacles. Coins buy six outfits (Bu Khalid, Navy Night, Desert Sand, Winter Charcoal, Emerald, Golden Legend with a sparkle trail) and magnet/shield upgrades.
+- **Power-ups:** the magnet pulls coins and tea in; the bubble shield blocks one hit. HUD rings show the time left.
+- **Juice:** pickups fly from the world into their HUD counter, sparkle bursts, rings, pop-in score text, combo multipliers (×2 at 10, ×3 at 25, ×4 at 50 pickups without a hit), hit-stop and screen shake on damage, a slow-motion flash for the golden dallah, confetti finishes, and 1–3 star ratings with animated results screens.
+- **Chapter 2 · Kuwait Nights:** five new night stages (6–10) on the same streets, each moonlit at load time (night grade, glowing lanterns, stars only over open sky, a moon), with fireflies, a third pit, faster speeds, more moving hazards and a night soundtrack. The finale is now Stage 10, the zaffa.
+- **Grounded running:** run poses advance with distance travelled, not a fixed frame rate, and each pose lasts exactly as long as its planted sandal travels in the artwork, so feet no longer skate. The title runner and the run over to the menu use the same stride. Ducking is a held power-slide pose with dust.
+- **Proper shemagh colors:** outfit recoloring flood-fills the ghutra from the top of the head, so the whole scarf, flowing tail included, takes the headwear color and the robe keeps its own.
+- **Stage intro card and iris reveal** at the start of every level, and contact shadows under every street hazard (the cat sits still and breathes instead of rocking).
+- **New sound:** a synthesized mixer with compression and reverb, glass-clink tea, coin chimes that climb with the combo, thumps, whooshes, fanfares and a Hijaz-scale soundtrack with darbuka-style rhythm (separate menu and in-game tracks).
+
 ## Install and run
 
 Use Node.js 22.12+ and npm (Node 24 was used for this release pass).
@@ -53,17 +66,19 @@ After building the final web assets and Android APK, `node scripts/prepare-site-
 | Run          | Automatic                      | Automatic                             |
 | Jump         | Space, Up, W                   | Right side of the game or JUMP button |
 | Jump higher  | Hold the jump key              | Hold the touch                        |
-| Duck         | Hold Down or S                 | Hold the Duck / وطّي button            |
+| Double jump  | Press jump again in mid-air    | Tap JUMP again in mid-air             |
+| Duck         | Hold Down or S                 | Hold the Duck button                  |
+| Slam down    | Down or S in mid-air           | Duck button in mid-air                |
 | Pause/resume | Esc                            | Pause button / Resume                 |
 | Menus        | Tab or arrow keys, Enter/Space | Tap a button                          |
 
 Standard controllers use the bottom face button (A / ✕) for Jump/Select, the right face button (B / ○) for Duck while playing or Back in menus, Start for Pause, and the D-pad or left stick for menus. Physical controller and Steam Input certification remain release tests. Options includes Reduce effects, privacy/credits, licenses, and desktop Quit.
 
-One jump at a time; no double jump. Hold Duck to pass under hanging awnings. Ducking blocks jump buffering and keeps the character low until the trailing edge clears, including after pause/resume. Jump buffering is 140 ms; coyote time is 110 ms. Releasing jump early cuts upward speed. Each stage begins with 3 hearts and 3 lives. Damage has 1.2 seconds of invulnerability. Death costs one life and respawns at the start or the invisible midpoint checkpoint, restoring hearts. Collected items and awarded obstacle points are retained to prevent farming by respawning.
+One air jump is allowed after leaving the ground; a press close to the ground stays buffered for a normal landing jump instead. Hold Duck to pass under hanging awnings; Duck in mid-air slams down. Ducking blocks jump buffering and keeps the character low until the trailing edge clears, including after pause/resume. Jump buffering is 140 ms; coyote time is 110 ms. Releasing jump early switches to stronger rising gravity, so a tap is a short hop rather than a stalled jump. The practice’s first press is always a full jump. Each stage begins with 3 hearts and 3 lives. Damage has 1.2 seconds of invulnerability. Death costs one life and respawns at the start or the invisible midpoint checkpoint, restoring hearts. Collected items and awarded obstacle points are retained to prevent farming by respawning.
 
 Three lives means three total attempts. With zero lives, Retry begins a fresh attempt at that stage. Escape and focus loss pause gameplay, physics, enemy movement, and game timers; returning to the browser leaves a paused run for you to resume.
 
-## Five stages
+## Ten stages in two chapters
 
 | Stage         | Setting                                                | Base speed | Approximate duration |
 | ------------- | ------------------------------------------------------ | ---------- | -------------------- |
@@ -72,12 +87,19 @@ Three lives means three total attempts. With zero lives, Retry begins a fresh at
 | 3 — المباركية | Souq, spices, lanterns, fruit stalls                   | 165 px/s   | 72 s                 |
 | 4 — البر      | Sunset desert, camps, SUVs, goats and wind             | 174 px/s   | 72 s                 |
 | 5 — العرس     | Wedding hall, guests, gifts, coffee service            | 181 px/s   | 75 s                 |
+| 6 — الفريج بالليل | Neighborhood Nights (moonlit)                      | 186 px/s   | 70 s                 |
+| 7 — جمعية آخر الليل | Late-Night Co-op                                  | 190 px/s   | 70 s                 |
+| 8 — المباركية بالفنر | Souq by Lantern Light                            | 195 px/s   | 70 s                 |
+| 9 — ليلة بالبر | Desert Starlight                                     | 200 px/s   | 70 s                 |
+| 10 — الزفة     | The Zaffa Parade (finale)                             | 206 px/s   | 72 s                 |
 
-The last stage speeds up by 8% near its finish. Deaths and pauses add to the time. Later stages include clearly marked small gaps. Every stage contains exactly one golden dallah.
+The final stage speeds up by 8% near its finish. Deaths and pauses add to the time. Stages 3–5 include two clearly marked small gaps and night stages three. Every stage contains exactly one golden dallah. Night stages set `night: true` and `art` (the day street they reuse) in `levels.ts`; `nightGrade()` in `ArcadeArt.ts` builds their moonlit art once at load.
 
 ## Scores and saves
 
-Tea: **+100**. Avoided obstacle: **+25**. Golden dallah: **+5,000**. Finish: **+1,000**. Every tea in a stage: **+2,000**. Remaining hearts: **+250 each**. Remaining lives: **+500 each**.
+Tea: **+100 × combo multiplier**. Coin: **+10 × multiplier** and one coin for the shop. Avoided obstacle: **+25**. Golden dallah: **+5,000**. Finish: **+1,000**. Every tea in a stage: **+2,000**. Remaining hearts: **+250 each**. Remaining lives: **+500 each**.
+
+Stars: one for finishing, one for the golden dallah, one for collecting at least 90% of the tea. Finishing also pays 20 + 10 per star in bonus coins. Coins collected before a game over are kept.
 
 Save format version 2 retains the LocalStorage key `dishdasha-dash:v1` for migration. Menus default to English; version-1 saves retain scores/unlocks and migrate to English. Version-2 saves preserve the chosen menu language. The HUD and world text always remain Arabic.
 
@@ -94,8 +116,7 @@ Saves belong to the current browser and site origin. A localhost save does not t
 ```text
 src/
   main.ts                     Phaser configuration, screen routing, lifecycle
-  style.css                   Base menus and responsive controls
-  arcade.css                  Illustrated edition, arcade wordmark and HUD
+  ui/game.css                 Full-screen frame, title, menus, shop, HUD and results
   config/Constants.ts         Resolution, scoring constants, development flags
   scenes/
     BootScene.ts              Asset loading, progress, recovery, and atlas preparation
@@ -112,9 +133,13 @@ src/
     LocalizationManager.ts    Arabic / English labels and Kuwaiti messages
     SaveManager.ts            Validated saves, revision ordering and write queue
     ScoreManager.ts           Level scoring and campaign statistics
+    Economy.ts                Outfits, upgrades, power-up durations and star rules
+    Fx.ts                     Particles, rings, pop text, shake and flash
   ui/
     GameUI.ts                 All menu screens, HUD, touch controls
     icons.ts                  Reusable interface icons
+  utils/AvatarArt.ts          Outfit recoloring of every hero pose, shop previews
+  utils/FxArt.ts              Procedural coin, sparkle, ring, power-up bubble textures
   utils/ArcadeArt.ts          Sprite extraction, pose normalization, looping street textures
   utils/arcadeFrames.json     Reviewed sprite source bounds
   utils/sceneryLayout.json    Landmark panoramas, exact signs and floor alignment
@@ -147,17 +172,9 @@ Hero and prop artwork uses true transparency. The runtime removes almost transpa
 
 ## Add music and sounds
 
-The procedural soundtrack starts only after a user interaction because browsers restrict autoplay. The game remains playable if audio is unavailable. In `AudioManager.ts`, set:
+All audio is synthesized in `AudioManager.ts`: no files to license or load. Audio starts on the title screen’s first key press or tap, because browsers restrict autoplay. The game remains playable if audio is unavailable.
 
-```ts
-musicFile = '/assets/audio/music.ogg';
-readonly soundFiles = {
-  jump: '/assets/audio/jump.wav',
-  tea: '/assets/audio/tea.wav',
-};
-```
-
-Available effect names: `jump`, `land`, `tea`, `golden`, `damage`, `death`, `complete`, `select`, `pause`, `victory`. Omitted effects keep their procedural fallback. Use short effects and browser-compatible files. Music and effects have separate toggles and share the 0–100% volume control.
+Effects are recipes in `play()` built from oscillators, filtered noise and a bell helper (inharmonic partials for glass and metal). `play(name, step)` raises the pitch by `step` quarter-tones for combo chains. The soundtrack is a look-ahead sequencer (`schedule()` / `note()`) with Hijaz-scale phrases (`MELODY_A`, `MELODY_B`), a maqsum drum pattern and a drone; `music("menu" | "game" | "none")` switches tracks. Music and effects have separate toggles and share the 0–100% volume control.
 
 ## Development flags
 

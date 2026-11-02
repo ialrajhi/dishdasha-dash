@@ -2,6 +2,9 @@ import { test, expect, type Page } from '@playwright/test';
 async function ready(page: Page) {
   await page.goto('/?testing=1');
   await page.waitForFunction(() => (window as any).__DASH__?.game.scene.isActive('Menu'));
+  await page.evaluate(() => (window as any).__DASH__.action('title-start'));
+  await page.waitForFunction(() => (window as any).__DASH__?.game.scene.isActive('Menu'));
+  await page.evaluate(() => (window as any).__DASH__.action('title-start'));
 }
 
 test('fixed physics agrees at 15, 30, 60, 120, and 144 fps', async ({page}) => {
@@ -44,16 +47,21 @@ test('mixed inputs release once, pause preserves velocity, finish lands, reset d
     const step=()=>d.game.step(time+=1000/60,1000/60);
     s.pressJump('first');s.pressJump('second');step();step();
     const v0=s.player.bodyRef.velocity.y;
-    s.releaseJump('first');const v1=s.player.bodyRef.velocity.y;
-    s.releaseJump('second');const v2=s.player.bodyRef.velocity.y;
+    s.releaseJump('first');const v1=s.player.bodyRef.velocity.y;const heldAfterFirst=s.player.held;
+    s.releaseJump('second');const v2=s.player.bodyRef.velocity.y;const heldAfterSecond=s.player.held;
     s.releaseJump('second');const v3=s.player.bodyRef.velocity.y;
+    // A release switches to stronger rising gravity on the next step instead of cutting speed.
+    step();const afterOne=s.player.bodyRef.velocity.y;step();
+    const releasedRise=s.player.bodyRef.velocity.y-afterOne;const releasedGravity=s.player.bodyRef.gravity.y;
+    s.player.setVelocityY(v3);
     d.action('pause');const paused=s.player.bodyRef.velocity.y;
     d.action('resume');const resumed=s.player.bodyRef.velocity.y;
     s.player.bodyRef.reset(s.course.length,240);s.player.setVelocityY(-150);s.finish();
     for(let i=0;i<60;i++)step();
-    return {v0,v1,v2,v3,paused,resumed,landed:s.player.y,pose:s.player.state};
+    return {v0,v1,v2,v3,heldAfterFirst,heldAfterSecond,releasedRise,releasedGravity,paused,resumed,landed:s.player.y,pose:s.player.state};
   });
-  expect(r.v0).toBe(r.v1);expect(r.v2).toBeGreaterThan(r.v1);expect(r.v2).toBe(r.v3);
+  expect(r.v0).toBe(r.v1);expect(r.heldAfterFirst).toBe(true);expect(r.heldAfterSecond).toBe(false);
+  expect(r.v2).toBe(r.v3);expect(r.releasedGravity).toBe(700);expect(r.releasedRise).toBeGreaterThan(25);
   expect(r.paused).toBe(r.v3);expect(r.resumed).toBe(r.v3);
   expect(r.landed).toBeCloseTo(300,2);expect(r.pose).toBe('victory');
   await page.evaluate(() => { const d=(window as any).__DASH__; d.game.loop.start(d.game.step.bind(d.game));d.start(1); });
@@ -70,10 +78,10 @@ test('mixed inputs release once, pause preserves velocity, finish lands, reset d
 test('English menus preserve Arabic game text and offline licenses remain accessible', async ({page}) => {
   await ready(page);
   await expect(page.locator('html')).toHaveAttribute('lang','en');
-  await expect(page.locator('.english-title')).toHaveText('DISHDASHA DASH');
+  await expect(page.locator('.menu-screen .logo-en')).toContainText('DASH');
   await page.locator('[data-action="options"]').click();
   await page.locator('[data-action="about"]').click();
-  await expect(page.locator('.privacy-copy')).toContainText('does not collect or share');
+  await expect(page.locator('.prose')).toContainText('does not collect or share');
   await page.locator('[data-action="licenses"]').click();
   await expect(page.locator('#license-copy')).toContainText('Phaser', {ignoreCase:true});
   await page.evaluate(() => window.dispatchEvent(new Event('save-recovered')));
@@ -81,7 +89,6 @@ test('English menus preserve Arabic game text and offline licenses remain access
   await page.locator('.back-button').click();await page.locator('.back-button').click();await page.locator('.back-button').click();
   await page.locator('[data-action="start"]').click();
   await expect(page.locator('#level-label')).toContainText('الفريج');
-  await expect(page.locator('.hud-score small')).toHaveText('النقاط');
   await page.locator('[data-action="pause"]').click();
   await page.waitForTimeout(350);
   await expect(page.locator('#game-notice')).not.toHaveClass(/visible/);
@@ -124,8 +131,9 @@ test('phone and tablet menus have usable targets and scrollable options', async 
     const page=await context.newPage();await ready(page);
     const b=await page.locator('[data-action="start"]').boundingBox();
     expect(b!.height).toBeGreaterThanOrEqual(44);
-    const high=await page.locator('.high-score-link').boundingBox();
-    const cabinet=await page.locator('.game-cabinet').boundingBox();
+    const high=await page.locator('.menu-dock [data-action="high"]').boundingBox();
+    expect(high!.height).toBeGreaterThanOrEqual(44);
+    const cabinet=await page.locator('.frame').boundingBox();
     expect(high!.y+high!.height).toBeLessThanOrEqual(cabinet!.y+cabinet!.height);
     await page.screenshot({path:`test-results/menu-${viewport.width}x${viewport.height}.png`});
     await page.locator('[data-action="options"]').tap();

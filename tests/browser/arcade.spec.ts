@@ -2,19 +2,25 @@ import { test, expect } from "@playwright/test";
 
 test("menu stays still and running uses grounded alternating strides without branding", async ({ page }) => {
   await page.goto("/?testing=1");
-  await expect(page.locator(".asset-loading")).toHaveCount(0);
+  await page.waitForFunction(() => (window as any).__DASH__?.game.scene.isActive("Menu") && !document.querySelector("#ui-layer")?.hasAttribute("inert"));
+  await expect(page.locator(".title-screen .press-start")).toBeVisible();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".menu-screen")).toBeVisible();
   const menu = await page.evaluate(() => {
     const s = (window as any).__DASH__.game.scene.getScene("Menu");
     const before = [s.world.scenery.x, s.world.street.tilePositionX, s.runner.x, s.runner.y];
-    const poses = [0, 7000, 11000, 13900].map(time => { s.update(time); return s.runner.texture.key; });
-    return { before, after: [s.world.scenery.x, s.world.street.tilePositionX, s.runner.x, s.runner.y], poses };
+    // Let him finish running over from the title spot, then the menu must hold still.
+    s.update(0, 1000); s.update(0, 16);
+    const before2 = [s.world.scenery.x, s.world.street.tilePositionX, s.runner.x, s.runner.y];
+    const poses = [0, 7000, 11000, 13900].map(time => { s.update(time, 16); return s.runner.texture.key; });
+    void before;
+    return { before: before2, after: [s.world.scenery.x, s.world.street.tilePositionX, s.runner.x, s.runner.y], poses };
   });
   expect(menu.after).toEqual(menu.before);
-  expect(menu.poses).toEqual(["hero-idle", "hero-victoryWave", "hero-victoryFists", "hero-idle"]);
+  expect(menu.poses).toEqual(["hero-idle", "hero-victoryWave", "hero-idle", "hero-idleBreathe"]);
   await page.evaluate(() => (window as any).__DASH__.start(2));
   await page.waitForFunction(() => (window as any).__DASH__.scene()?.player?.x > 240);
   await expect(page.locator(".hud-brand")).toHaveCount(0);
-  await expect(page.locator(".shell-header .wordmark")).toBeHidden();
   const gait = await page.evaluate(() => {
     const s = (window as any).__DASH__.scene();
     s.scene.pause();
@@ -22,8 +28,9 @@ test("menu stays still and running uses grounded alternating strides without bra
     p.state = "run";
     p.resetVisual();
     p.bodyRef.blocked.down = true;
-    const hero = Array.from({length:8}, (_, i) => {
-      p.capturePrevious(); p.x += (260 * 2 / 3) / 12; p.syncMovement(1 / 12); p.present(1); p.animate(i * 100);
+    // Walk one full stride in fine steps: every authored pose must appear, short push-offs included.
+    const hero = Array.from({length:48}, (_, i) => {
+      p.capturePrevious(); p.x += 476 * 0.26 / 48; p.syncMovement(1 / 60); p.present(1); p.animate(i * 100);
       return p.visual.texture.key;
     });
     const stationary = p.visual.texture.key;
@@ -58,7 +65,7 @@ test("cold loading protects the game, then every stage renders illustrated asset
     await route.continue();
   });
   await page.goto("/?testing=1", { waitUntil: "domcontentloaded" });
-  await expect(page.locator(".asset-loading")).toBeVisible();
+  await expect(page.locator(".boot")).toBeVisible();
   await expect(page.locator("#ui-layer")).toHaveAttribute("inert", "");
   await page.evaluate(() => {
     (window as any).__DASH__.action("start");
@@ -70,7 +77,7 @@ test("cold loading protects the game, then every stage renders illustrated asset
     ),
   ).toBe(false);
   release();
-  await expect(page.locator(".asset-loading")).toHaveCount(0);
+  await expect(page.locator(".boot")).toHaveCount(0);
   await expect(page.locator("#phaser-game canvas")).toHaveAttribute(
     "width",
     "1920",
@@ -79,7 +86,7 @@ test("cold loading protects the game, then every stage renders illustrated asset
     "height",
     "1080",
   );
-  for (let level = 1; level <= 5; level++) {
+  for (let level = 1; level <= 10; level++) {
     await page.evaluate(
       (level) => (window as any).__DASH__.start(level),
       level,
@@ -102,7 +109,7 @@ test("cold loading protects the game, then every stage renders illustrated asset
           h.texture.key.startsWith("arcade-"),
         ),
         zoom: s.cameras.main.zoom,
-        floor: s.textures.exists(`street-${s.level.id}`),
+        floor: s.textures.exists(`street-${s.level.night ? "night-" : ""}${s.level.art}`),
       };
     });
     expect(state.body).toEqual([19, 58]);
@@ -113,7 +120,7 @@ test("cold loading protects the game, then every stage renders illustrated asset
     expect(state.zoom).toBe(3);
     expect(state.floor).toBe(true);
     await page
-      .locator(".game-cabinet")
+      .locator(".frame")
       .screenshot({ path: `test-results/arcade-stage-${level}.png` });
   }
   expect(errors).toEqual([]);
@@ -132,6 +139,6 @@ test("asset download failure offers recovery instead of a broken game", async ({
   ).toBe(false);
   await page.unroute("**/hero-sheet.webp");
   await page.locator('[data-action="reload"]').click();
-  await expect(page.locator(".asset-loading")).toHaveCount(0);
-  await expect(page.locator(".game-title")).toBeVisible();
+  await expect(page.locator(".boot")).toHaveCount(0);
+  await expect(page.locator(".title-screen .logo")).toBeVisible();
 });

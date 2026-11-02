@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 import { ASSET_OVERRIDES, generateCoreArt } from "../utils/PixelArtGenerator";
 import { preloadArcadeArt, prepareArcadeArt } from "../utils/ArcadeArt";
+import { generateFxArt } from "../utils/FxArt";
+import { ensureAvatar } from "../utils/AvatarArt";
+import { save } from "../systems/SaveManager";
 export class BootScene extends Phaser.Scene {
   private failed = false;
   constructor() {
@@ -34,6 +37,8 @@ export class BootScene extends Phaser.Scene {
       ]);
       generateCoreArt(this);
       prepareArcadeArt(this);
+      generateFxArt(this);
+      ensureAvatar(this.textures, save.data.avatar);
       this.game.events.emit("asset-progress", 1);
       this.game.events.emit("assets-ready");
       this.scene.start("Menu");

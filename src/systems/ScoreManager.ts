@@ -1,4 +1,5 @@
 import { POINTS } from "../config/Constants";
+import { COIN_POINTS, finishCoins } from "./Economy";
 export interface LevelResult {
   id: number;
   score: number;
@@ -6,6 +7,9 @@ export interface LevelResult {
   totalTea: number;
   golden: boolean;
   deaths: number;
+  coins: number;
+  coinBonus: number;
+  stars: number;
   hearts: number;
   lives: number;
   perfect: boolean;
@@ -16,14 +20,23 @@ export class ScoreManager {
   tea = 0;
   golden = false;
   deaths = 0;
+  coins = 0;
+  bestCombo = 0;
   collected = new Set<string>();
   resolved = new Set<string>();
-  collect(id: string, golden = false) {
+  collect(id: string, golden = false, multiplier = 1) {
     if (this.collected.has(id)) return false;
     this.collected.add(id);
-    this.score += golden ? POINTS.golden : POINTS.tea;
+    this.score += golden ? POINTS.golden : POINTS.tea * multiplier;
     if (golden) this.golden = true;
     else this.tea++;
+    return true;
+  }
+  collectCoin(id: string, multiplier = 1) {
+    if (this.collected.has(id)) return false;
+    this.collected.add(id);
+    this.coins++;
+    this.score += COIN_POINTS * multiplier;
     return true;
   }
   avoid(id: string) {
@@ -36,6 +49,7 @@ export class ScoreManager {
     totalTea: number,
     hearts: number,
     lives: number,
+    stars = 1,
   ): LevelResult {
     const perfect = this.tea === totalTea;
     const bonus =
@@ -51,6 +65,9 @@ export class ScoreManager {
       totalTea,
       golden: this.golden,
       deaths: this.deaths,
+      coins: this.coins,
+      coinBonus: finishCoins(stars),
+      stars,
       hearts,
       lives,
       perfect,

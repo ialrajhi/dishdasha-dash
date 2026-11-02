@@ -28,6 +28,8 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
   private previousX = 0;
   private gait = new StrideAnimator(KID_RUN);
   private suspension: Phaser.GameObjects.TileSprite[] = [];
+  /** Contact shadow: grounds every street hazard the way the hero's shadow grounds him. */
+  private shadow?: Phaser.GameObjects.Ellipse;
   constructor(scene: Phaser.Scene, spec: HazardSpec) {
     super(scene, spec.x, GROUND, propTexture(spec.kind));
     this.spec = spec;
@@ -42,6 +44,8 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       this.artScale = (propHeight[spec.kind] ?? 36) / this.height;
       this.setScale(this.artScale);
       if (spec.kind === "ball") this.setOrigin(0.5).setY(GROUND - this.displayHeight / 2);
+      if (spec.kind !== "awning")
+        this.shadow = scene.add.ellipse(spec.x, GROUND + 1, Math.min(44, this.displayWidth * 0.82), 5, 0x2b2318, 0.32).setDepth(8);
       if (spec.kind === "awning") {
         this.setDisplaySize(126, 52).setY(GROUND - 50);
         // Ropes continue above the viewport and meet the two metal suspension rings.
@@ -59,6 +63,7 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
   present(alpha: number) {
     if (this.spec.kind !== "kid") return;
     const x = Phaser.Math.Linear(this.previousX, this.x, alpha);
+    this.shadow?.setX(x);
     this.setTexture(`arcade-kid-stride-${this.gait.frame(alpha)}`);
     this.setDisplayOrigin(this.width / 2 + (this.x - x) / this.artScale, this.height);
   }
@@ -85,7 +90,10 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
       this.setAngle(0).setScale(this.artScale);
       this.y = GROUND;
     }
-    if (["dallah", "cat", "goat", "pigeon", "waiter"].includes(this.spec.kind)) {
+    if (this.spec.kind === "cat") {
+      // A real cat sits still and breathes; rocking around its base made it look like it hovered.
+      this.setAngle(0).setScale(this.artScale, this.artScale * (1 + Math.sin(now / 700 + this.originalX) * 0.018));
+    } else if (["dallah", "goat", "pigeon", "waiter"].includes(this.spec.kind)) {
       this.setAngle(Math.sin(now / 125 + this.originalX) * 3);
       this.setScale(this.artScale * (1 + Math.sin(now / 125) * 0.025),
         this.artScale * (1 - Math.sin(now / 125) * 0.025));
@@ -98,9 +106,17 @@ export class Obstacle extends Phaser.GameObjects.Sprite {
     )
       this.y = GROUND - Math.max(0, (this.x - playerX - 330) * 0.65);
     else if (this.spec.kind === "bag" && this.x - playerX <= 330) this.y = GROUND;
+    this.updateShadow();
+  }
+  private updateShadow() {
+    if (!this.shadow) return;
+    const bottom = this.spec.kind === "ball" ? this.y + this.displayHeight / 2 : this.y;
+    const lift = Math.max(0, GROUND - bottom);
+    this.shadow.setPosition(this.x, GROUND + 1).setScale(Math.max(0.35, 1 - lift / 60)).setAlpha(Math.max(0.1, 0.32 - lift / 200));
   }
   destroy(fromScene?: boolean) {
     this.suspension.forEach(rope => rope.destroy());
+    this.shadow?.destroy();
     this.suspension = [];
     super.destroy(fromScene);
   }

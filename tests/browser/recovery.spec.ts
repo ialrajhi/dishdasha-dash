@@ -1,7 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 async function ready(page: Page) {
   await page.goto('/?testing=1');
-  await expect(page.locator('.asset-loading')).toHaveCount(0);
+  await expect(page.locator('.boot')).toHaveCount(0);
+  await page.waitForFunction(() => (window as any).__DASH__?.game.scene.isActive('Menu'));
+  await page.evaluate(() => (window as any).__DASH__.action('title-start'));
 }
 for (const failure of ['font', 'stalled-font', 'image']) {
   test(`startup recovers from ${failure} with Retry and no uncaught rejection`, async ({page}) => {
@@ -13,12 +15,16 @@ for (const failure of ['font', 'stalled-font', 'image']) {
       await route.abort().catch(() => {});
     });
     await page.goto('/?testing=1', {waitUntil:'domcontentloaded'});
-    await expect(page.locator('.asset-loading')).toContainText('Could not load the game', {timeout:14000});
+    await expect(page.locator('.boot')).toContainText('Could not load the game', {timeout:14000});
     await expect(page.locator('#ui-layer')).toHaveAttribute('inert', '');
     expect(errors).toEqual([]);
     await page.unroute(pattern);
     await page.locator('[data-action="reload"]').click();
-    await expect(page.locator('.asset-loading')).toHaveCount(0, {timeout:20000});
+    // The reloaded page builds its title under the loading screen; wait until loading has finished.
+    await page.waitForFunction(() => (window as any).__DASH__?.game.scene.isActive('Menu') && !document.querySelector('#ui-layer')?.hasAttribute('inert'), undefined, {timeout:20000});
+    await expect(page.locator('.boot')).toHaveCount(0, {timeout:20000});
+    await expect(page.locator('.title-screen .press-start')).toBeVisible();
+    await page.keyboard.press('Enter');
     await expect(page.locator('[data-action="start"]')).toBeVisible();
     expect(errors).toEqual([]);
   });

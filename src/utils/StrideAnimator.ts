@@ -6,6 +6,11 @@ export interface StrideCycle {
   readonly frameCount: number;
   /** Optional authored-pose cadence. The hero prioritizes readable poses over an unbounded FPS. */
   readonly cadence?: { readonly minFPS: number; readonly maxFPS: number; readonly maxRunSpeed: number };
+  /**
+   * Optional share of the stride each pose covers, e.g. how far the planted foot moves while it is
+   * shown. Unevenly spaced artwork then keeps the foot on the ground instead of skating.
+   */
+  readonly weights?: readonly number[];
 }
 
 /** Movement owns speed. Authored pose cadence can clamp FPS for small-sprite readability. */
@@ -29,6 +34,8 @@ export class StrideAnimator {
         !Number.isFinite(cycle.loopDuration) || cycle.loopDuration <= 0 ||
         !Number.isSafeInteger(cycle.frameCount) || cycle.frameCount < 1)
       throw new RangeError("A stride needs positive length, duration and integer frame count.");
+    if (cycle.weights && (cycle.weights.length !== cycle.frameCount || cycle.weights.some((w) => !Number.isFinite(w) || w <= 0)))
+      throw new RangeError("Stride weights need one positive value per frame.");
     if (cycle.cadence && (!Number.isFinite(cycle.cadence.minFPS) || cycle.cadence.minFPS <= 0 ||
         !Number.isFinite(cycle.cadence.maxFPS) || cycle.cadence.maxFPS < cycle.cadence.minFPS ||
         !Number.isFinite(cycle.cadence.maxRunSpeed) || cycle.cadence.maxRunSpeed <= 0))
@@ -61,8 +68,19 @@ export class StrideAnimator {
   }
 
   frame(alpha = 1) {
+    const phase = this.sample(alpha);
+    const weights = this.cycle.weights;
+    if (weights) {
+      const total = weights.reduce((a, b) => a + b, 0);
+      let edge = 0;
+      for (let i = 0; i < weights.length; i++) {
+        edge += weights[i] / total;
+        if (phase < edge - 1e-7) return i;
+      }
+      return 0;
+    }
     // Stabilize exact frame boundaries after repeated floating-point physics steps.
-    return Math.floor(this.sample(alpha) * this.cycle.frameCount + 1e-7) % this.cycle.frameCount;
+    return Math.floor(phase * this.cycle.frameCount + 1e-7) % this.cycle.frameCount;
   }
 
   /** Respawn/teleport: reset explicitly instead of treating the position jump as running. */
