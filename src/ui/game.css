@@ -237,7 +237,7 @@ kbd { font-family: var(--body); font-weight: 700; font-size: .8em; padding: .15e
 .showcase { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 2cqh; border-radius: 1.2em; background: radial-gradient(ellipse at 50% 35%, #2c4f86 0%, #13233f 70%); border: .12em solid #ffffff22; overflow: hidden; gap: .8cqh; }
 .showcase::before { content: ""; position: absolute; inset: 0; background: conic-gradient(from 0deg, transparent, #ffffff10, transparent 20%, #ffffff10 40%, transparent 50%, #ffffff10 70%, transparent 80%); animation: spin 18s linear infinite; }
 .showcase-floor { position: absolute; bottom: 31%; width: 60%; height: 4cqh; border-radius: 50%; background: radial-gradient(#0009, transparent 70%); }
-.showcase img { position: relative; height: 38cqh; margin-bottom: 1cqh; filter: drop-shadow(0 0 1.5cqh var(--trail)); }
+.showcase canvas { position: relative; height: 40cqh; margin-bottom: 1cqh; filter: drop-shadow(0 0 1.5cqh var(--trail)); }
 .showcase strong { position: relative; font-family: var(--display); font-size: 1.4em; color: var(--gold); line-height: 1; }
 .showcase small { position: relative; opacity: .75; font-size: .8em; }
 .showcase .btn { position: relative; font-size: 1.15em; margin-top: .6cqh; }

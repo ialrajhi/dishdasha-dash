@@ -19,6 +19,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private lastFrame = "";
   private gait = new StrideAnimator(HERO_RUN);
   private strideState: PlayerState = "run";
+  /** Whether the last grounded step covered ground. Air time keeps it, so landing never flashes idle. */
+  private striding = false;
   private visualAlpha = 1;
   private previousX = 0;
   private previousY = 0;
@@ -86,13 +88,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // The state captured before physics describes the movement just simulated.
     this.gait.setCycle(this.strideState === "duck" ? HERO_DUCK : HERO_RUN);
     const grounded = this.bodyRef.blocked.down || this.bodyRef.touching.down;
-    this.gait.advance(this.x - this.previousX, seconds,
-      grounded && (this.strideState === "run" || this.strideState === "duck"));
+    const onFoot = grounded && (this.strideState === "run" || this.strideState === "duck");
+    this.gait.advance(this.x - this.previousX, seconds, onFoot);
+    if (onFoot && seconds > 0) this.striding = this.gait.animationFPS > 0;
   }
   animate(now: number) {
     this.gait.setCycle(this.state === "duck" ? HERO_DUCK : HERO_RUN);
     const base = this.state === "run"
-      ? this.gait.animationFPS === 0 ? heroFrame("idle", now).slice(5) : `run-stride-${this.gait.frame(this.visualAlpha)}`
+      ? !this.striding ? heroFrame("idle", now).slice(5) : `run-stride-${this.gait.frame(this.visualAlpha)}`
       // Ducking is a power slide on the sandals: one low pose held while dust sprays, never a crouch-walk
       // whose tiny steps would skate across the street.
       : this.state === "duck" ? "duck-0" : heroFrame(this.state, now).slice(5);
@@ -126,6 +129,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.tweens.killTweensOf(this.visual);
     this.visual.setScale(HERO_SCALE).setAngle(0).clearTint().setAlpha(1);
     this.gait.reset();
+    this.striding = false;
     this.capturePrevious();
     this.present(1);
   }

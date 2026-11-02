@@ -7,8 +7,8 @@ export interface StrideCycle {
   /** Optional authored-pose cadence. The hero prioritizes readable poses over an unbounded FPS. */
   readonly cadence?: { readonly minFPS: number; readonly maxFPS: number; readonly maxRunSpeed: number };
   /**
-   * Optional share of the stride each pose covers, e.g. how far the planted foot moves while it is
-   * shown. Unevenly spaced artwork then keeps the foot on the ground instead of skating.
+   * Optional ground travel from each pose to the next, e.g. how far the planted foot moves between
+   * them in the artwork. Unevenly spaced artwork then keeps the foot on the ground instead of skating.
    */
   readonly weights?: readonly number[];
 }
@@ -71,11 +71,13 @@ export class StrideAnimator {
     const phase = this.sample(alpha);
     const weights = this.cycle.weights;
     if (weights) {
+      // Pose i lines up with the ground at the start of its span. Show it from halfway after the previous
+      // pose to halfway before the next, so the drawn foot drifts at most half a gap either way.
       const total = weights.reduce((a, b) => a + b, 0);
-      let edge = 0;
+      let start = 0;
       for (let i = 0; i < weights.length; i++) {
-        edge += weights[i] / total;
-        if (phase < edge - 1e-7) return i;
+        if (phase < (start + weights[i] / 2) / total - 1e-7) return i;
+        start += weights[i];
       }
       return 0;
     }

@@ -30,7 +30,7 @@ test("menu stays still and running uses grounded alternating strides without bra
     p.bodyRef.blocked.down = true;
     // Walk one full stride in fine steps: every authored pose must appear, short push-offs included.
     const hero = Array.from({length:48}, (_, i) => {
-      p.capturePrevious(); p.x += 476 * 0.26 / 48; p.syncMovement(1 / 60); p.present(1); p.animate(i * 100);
+      p.capturePrevious(); p.x += 444 * 0.26 / 48; p.syncMovement(1 / 60); p.present(1); p.animate(i * 100);
       return p.visual.texture.key;
     });
     const stationary = p.visual.texture.key;
